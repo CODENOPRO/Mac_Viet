@@ -578,7 +578,7 @@ export async function resizeImageToMax1024(file: File): Promise<string> {
 export const nenAnhChoAI = resizeImageToMax1024;
 
 /**
- * Ghi trực tiếp dải mờ và dòng chữ "ANH DO AI TAO" vào canvas của ảnh
+ * Ghi trực tiếp dải mờ và dòng chữ "ẢNH DO AI TẠO" vào canvas của ảnh
  * để khi người dùng tải về file ảnh, nhãn này vẫn luôn hiện diện.
  */
 export async function dongDauAnhAI(dataUrl: string): Promise<string> {
@@ -600,7 +600,7 @@ export async function dongDauAnhAI(dataUrl: string): Promise<string> {
       const fontSize = Math.max(12, Math.round(canvas.width * 0.024));
       const padX = Math.round(fontSize * 0.8);
       const padY = Math.round(fontSize * 0.4);
-      const text = 'ANH DO AI TAO';
+      const text = 'ẢNH DO AI TẠO';
 
       ctx.font = `${fontSize}px "JetBrains Mono", monospace`;
       const textWidth = ctx.measureText(text).width;
@@ -645,10 +645,9 @@ export async function renderLook(
 ): Promise<{ imageUrl: string }> {
   const boiCanh = EVENTS[0];
   const bg = chonBoiCanhTuDong(boiCanh.id, 'toan_quoc');
-  const dummyUserPhoto = anhNguoiDung || DEMO_RESPONSES.renderLook.imageUrl;
 
   const res = await macThu({
-    anhNguoi: dummyUserPhoto,
+    anhNguoi: anhNguoiDung || '',
     look,
     boiCanh,
     background: bg,

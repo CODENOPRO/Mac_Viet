@@ -1,3 +1,4 @@
+import { layTenMau } from '../data/palettes';
 /**
  * MẶC VIỆT · TRY-ON GUARD & WATERMARK ENGINE
  * Bộ kiểm định kỹ thuật & bảo vệ ranh giới văn hoá cho tính năng Mặc Thử
@@ -175,7 +176,7 @@ export async function checkImageQuality(dataUrl: string): Promise<ImageQualityCh
 }
 
 // =============================================================================
-// 3. ĐÓNG DẤU "ANH DO AI TAO" TRỰC TIẾP VÀO CANVAS (GÓC DƯỚI PHẢI)
+// 3. ĐÓNG DẤU "ẢNH DO AI TẠO" TRỰC TIẾP VÀO CANVAS (GÓC DƯỚI PHẢI)
 // =============================================================================
 
 export function applyWatermarkToCanvas(
@@ -187,7 +188,7 @@ export function applyWatermarkToCanvas(
   const fontSize = Math.max(11, Math.min(16, Math.round(width * 0.024)));
   const padX = Math.round(fontSize * 0.85);
   const padY = Math.round(fontSize * 0.45);
-  const text = 'ANH DO AI TAO';
+  const text = 'ẢNH DO AI TẠO';
 
   ctx.save();
   ctx.font = `${fontSize}px "JetBrains Mono", monospace`;
@@ -284,6 +285,8 @@ export async function exportLookCardPoster(opts: {
   mauChinh: string;
   suKien: string;
   scoreMau: number;
+  /** Chỉ đóng dấu ẢNH DO AI TẠO khi ảnh trên poster thật sự do AI dựng */
+  laAnhAI?: boolean;
 }): Promise<void> {
   return new Promise((resolve, reject) => {
     if (typeof window === 'undefined') return resolve();
@@ -323,22 +326,32 @@ export async function exportLookCardPoster(opts: {
     ctx.font = 'italic 16px "Be Vietnam Pro", sans-serif';
     ctx.fillText(`"${opts.caption}"`, posterW / 2, 180);
 
-    // 4. Vẽ ảnh trang phục ở giữa
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      const imgW = 480;
-      const imgH = 640;
-      const imgX = (posterW - imgW) / 2;
-      const imgY = 220;
+    // 4. Vẽ ảnh ở giữa. Chưa có ảnh thì vẽ mẫu màu chính kèm dòng ghi chú, không vẽ hình người.
+    const imgW = 480;
+    const imgH = 640;
+    const imgX = (posterW - imgW) / 2;
+    const imgY = 220;
 
-      // Khung viền ảnh
+    const veKhungAnh = (img: HTMLImageElement | null) => {
       ctx.strokeStyle = '#C39A27';
       ctx.lineWidth = 2;
       ctx.strokeRect(imgX - 2, imgY - 2, imgW + 4, imgH + 4);
 
-      // Ảnh
-      ctx.drawImage(img, imgX, imgY, imgW, imgH);
+      if (img) {
+        ctx.drawImage(img, imgX, imgY, imgW, imgH);
+      } else {
+        ctx.fillStyle = opts.mauChinh;
+        ctx.fillRect(imgX, imgY, imgW, imgH * 0.6);
+        ctx.fillStyle = '#F2EDE3';
+        ctx.fillRect(imgX, imgY + imgH * 0.6, imgW, imgH * 0.4);
+        ctx.fillStyle = '#A8322A';
+        ctx.font = '13px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('CHƯA CÓ ẢNH MẶC THỬ', posterW / 2, imgY + imgH * 0.6 + 70);
+        ctx.fillStyle = '#2C2A26';
+        ctx.font = '15px "Be Vietnam Pro", sans-serif';
+        ctx.fillText('Mẫu màu chính của bộ đồ', posterW / 2, imgY + imgH * 0.6 + 100);
+      }
 
       // 5. Thông tin chi tiết bên dưới
       ctx.fillStyle = '#2C2A26';
@@ -351,7 +364,7 @@ export async function exportLookCardPoster(opts: {
       ctx.font = '13px "JetBrains Mono", monospace';
       ctx.fillStyle = '#6E5439';
       ctx.fillText(
-        `MÀU CHÍNH: ${opts.mauChinh}  |  HÀI HOÀ: ${opts.scoreMau}/100  |  BỐI CẢNH: ${opts.suKien}`,
+        `MÀU CHÍNH: ${layTenMau(opts.mauChinh)}  |  HÀI HOÀ: ${opts.scoreMau}/100  |  BỐI CẢNH: ${opts.suKien}`,
         posterW / 2,
         tagY
       );
@@ -361,8 +374,10 @@ export async function exportLookCardPoster(opts: {
       ctx.font = '12px "Be Vietnam Pro", sans-serif';
       ctx.fillText('Bản in đối soát khảo cứu y phục truyền thống Việt Nam', posterW / 2, 1080);
 
-      // 6. ĐÓNG DẤU "ANH DO AI TAO" TRỰC TIẾP VÀO GÓC DƯỚI PHẢI CANVAS POSTER (MỤC 4)
-      applyWatermarkToCanvas(ctx, posterW, posterH);
+      // 6. Đóng dấu ẢNH DO AI TẠO chỉ khi ảnh trên poster do AI dựng
+      if (img && opts.laAnhAI) {
+        applyWatermarkToCanvas(ctx, posterW, posterH);
+      }
 
       // Xuất file
       canvas.toBlob(
@@ -383,12 +398,16 @@ export async function exportLookCardPoster(opts: {
       );
     };
 
-    img.onerror = () => {
-      // Nếu load ảnh lỗi thì vẫn đóng dấu và xuất poster
-      applyWatermarkToCanvas(ctx, posterW, posterH);
-      resolve();
-    };
+    if (!opts.imageDataUrl) {
+      veKhungAnh(null);
+      return;
+    }
 
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => veKhungAnh(img);
+    // Ảnh lỗi thì vẫn xuất poster, dùng mẫu màu thay ảnh
+    img.onerror = () => veKhungAnh(null);
     img.src = opts.imageDataUrl;
   });
 }

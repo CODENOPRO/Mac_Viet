@@ -38,7 +38,7 @@ export default function StudioWorkflow() {
                   type="button"
                   onClick={() => handleStepClick(s.id)}
                   disabled={isFuture}
-                  className={`flex items-center gap-2.5 text-left transition-all ${
+                  className={`flex items-center gap-2.5 text-left transition-all max-md:min-h-11 ${
                     isFuture
                       ? 'opacity-35 cursor-not-allowed'
                       : 'cursor-pointer hover:opacity-100'

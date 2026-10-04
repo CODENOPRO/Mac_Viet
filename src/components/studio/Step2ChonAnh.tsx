@@ -1,7 +1,15 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 import { useStore, store } from '../../lib/store';
 import { formatStudioStepLabel } from '../../types';
 import { checkImageQuality } from '../../lib/tryOnGuard';
+
+// Kích thước ảnh xuất ra: dọc 3:4, cạnh dài 1024px
+const XUAT_W = 768;
+const XUAT_H = 1024;
+
+// Tỉ lệ để ảnh phủ kín khung (như object-fit: cover)
+const tiLePhuKin = (khungW: number, khungH: number, anhW: number, anhH: number) =>
+  Math.max(khungW / anhW, khungH / anhH);
 
 export default function Step2ChonAnh() {
   const { userPhoto, selectedEvent, selectedRegion } = useStore();
@@ -24,6 +32,13 @@ export default function Step2ChonAnh() {
   const [panY, setPanY] = useState(0);
   const isDraggingRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
+
+  // Kích thước thật của ảnh và bề rộng khung cắt trên màn hình.
+  // Khung xem trước và ảnh xuất dùng chung một phép quy đổi, nên cắt sao ra vậy.
+  const [anhGoc, setAnhGoc] = useState<{ w: number; h: number } | null>(null);
+  const khungCatRef = useRef<HTMLDivElement | null>(null);
+  const [khungW, setKhungW] = useState(320);
+  const khungH = (khungW * 4) / 3;
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -78,6 +93,7 @@ export default function Step2ChonAnh() {
     reader.onload = (e) => {
       const result = e.target?.result as string;
       setRawImageSrc(result);
+      setAnhGoc(null);
       setScale(1);
       setPanX(0);
       setPanY(0);
@@ -124,8 +140,10 @@ export default function Step2ChonAnh() {
     const img = new Image();
     img.onload = () => {
       // Chuẩn hóa khung tỉ lệ 3:4, chiều rộng 768px, chiều cao 1024px (tối đa 1024px)
-      const targetW = 768;
-      const targetH = 1024;
+      const targetW = XUAT_W;
+      const targetH = XUAT_H;
+      const anhW = img.naturalWidth;
+      const anhH = img.naturalHeight;
 
       const canvas = document.createElement('canvas');
       canvas.width = targetW;
@@ -137,15 +155,15 @@ export default function Step2ChonAnh() {
       ctx.fillStyle = '#F2EDE3';
       ctx.fillRect(0, 0, targetW, targetH);
 
-      // Áp dụng ma trận dịch chuyển và phóng to từ khung kéo tự viết
+      // Quy đổi đúng như khung xem trước: ảnh phủ kín khung ở mức phóng 1,
+      // độ kéo tính theo pixel khung xem trước nên nhân với tỉ lệ canvas trên khung.
+      const quyDoi = targetW / khungW;
+      const phuKin = tiLePhuKin(targetW, targetH, anhW, anhH);
+      ctx.imageSmoothingQuality = 'high';
       ctx.save();
-      ctx.translate(targetW / 2 + panX, targetH / 2 + panY);
-      ctx.scale(scale, scale);
-
-      // Vẽ ảnh vào tâm
-      const drawW = img.width;
-      const drawH = img.height;
-      ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+      ctx.translate(targetW / 2 + panX * quyDoi, targetH / 2 + panY * quyDoi);
+      ctx.scale(phuKin * scale, phuKin * scale);
+      ctx.drawImage(img, -anhW / 2, -anhH / 2, anhW, anhH);
       ctx.restore();
 
       // VẼ LÊN CANVAS MỚI ĐỂ LOẠI BỎ TOÀN BỘ SIÊU DỮ LIỆU EXIF (BAO GỒM TOẠ ĐỘ GPS,
@@ -167,20 +185,51 @@ export default function Step2ChonAnh() {
   // ---------------------------------------------------------------------------
   // 4. KÉO THẢ DI CHUYỂN KHUNG HÌNH (PAN)
   // ---------------------------------------------------------------------------
-  const handleMouseDown = (e: React.MouseEvent) => {
+  // Không cho kéo hay thu nhỏ tới mức lộ khoảng trống trong khung
+  const gioiHanKeo = (x: number, y: number, s: number) => {
+    if (!anhGoc) return { x: 0, y: 0 };
+    const phuKin = tiLePhuKin(khungW, khungH, anhGoc.w, anhGoc.h);
+    const duX = Math.max(0, (anhGoc.w * phuKin * s - khungW) / 2);
+    const duY = Math.max(0, (anhGoc.h * phuKin * s - khungH) / 2);
+    return { x: Math.min(duX, Math.max(-duX, x)), y: Math.min(duY, Math.max(-duY, y)) };
+  };
+
+  // Đo bề rộng khung cắt, đo lại khi đổi kích thước màn hình
+  useLayoutEffect(() => {
+    const el = khungCatRef.current;
+    if (!showCropModal || !el) return;
+    const capNhat = () => setKhungW(el.clientWidth || 320);
+    capNhat();
+    const ro = new ResizeObserver(capNhat);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [showCropModal]);
+
+  const handleMouseDown = (e: React.PointerEvent) => {
     isDraggingRef.current = true;
+    e.currentTarget.setPointerCapture(e.pointerId);
     dragStartRef.current = { x: e.clientX - panX, y: e.clientY - panY };
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleMouseMove = (e: React.PointerEvent) => {
     if (!isDraggingRef.current) return;
-    setPanX(e.clientX - dragStartRef.current.x);
-    setPanY(e.clientY - dragStartRef.current.y);
+    const p = gioiHanKeo(e.clientX - dragStartRef.current.x, e.clientY - dragStartRef.current.y, scale);
+    setPanX(p.x);
+    setPanY(p.y);
   };
 
   const handleMouseUp = () => {
     isDraggingRef.current = false;
   };
+
+  const doiMucPhong = (s: number) => {
+    setScale(s);
+    const p = gioiHanKeo(panX, panY, s);
+    setPanX(p.x);
+    setPanY(p.y);
+  };
+
+  const phuKinXemTruoc = anhGoc ? tiLePhuKin(khungW, khungH, anhGoc.w, anhGoc.h) : 1;
 
   // Chỉ bật nút sang bước 3 khi đã có ảnh người dùng
   const canProceed = Boolean(userPhoto);
@@ -470,22 +519,33 @@ export default function Step2ChonAnh() {
 
             {/* Vùng xem trước 3:4 có thể kéo (Pan) */}
             <div
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-              className="w-full max-w-xs mx-auto aspect-[3/4] border-2 border-[#A8322A] overflow-hidden relative bg-[#F2EDE3] cursor-move select-none shadow-inner"
+              ref={khungCatRef}
+              onPointerDown={handleMouseDown}
+              onPointerMove={handleMouseMove}
+              onPointerUp={handleMouseUp}
+              onPointerCancel={handleMouseUp}
+              className="w-full max-w-xs mx-auto aspect-[3/4] border-2 border-[#A8322A] overflow-hidden relative bg-[#F2EDE3] cursor-move select-none shadow-inner touch-none"
             >
               <img
                 src={rawImageSrc}
                 alt="Ảnh đang căn chỉnh"
                 draggable={false}
+                onLoad={(e) => {
+                  const el = e.currentTarget;
+                  setAnhGoc({ w: el.naturalWidth, h: el.naturalHeight });
+                }}
                 style={{
-                  transform: `translate(${panX}px, ${panY}px) scale(${scale})`,
+                  // Ở mức phóng 1 ảnh phủ kín khung, giống hệt ảnh xuất ra
+                  width: anhGoc ? anhGoc.w * phuKinXemTruoc : undefined,
+                  height: anhGoc ? anhGoc.h * phuKinXemTruoc : undefined,
+                  left: '50%',
+                  top: '50%',
+                  transform: `translate(-50%, -50%) translate(${panX}px, ${panY}px) scale(${scale})`,
                   transformOrigin: 'center center',
                   maxWidth: 'none',
+                  opacity: anhGoc ? 1 : 0,
                 }}
-                className="absolute inset-0 m-auto select-none pointer-events-none transition-transform duration-75"
+                className="absolute select-none pointer-events-none"
               />
 
               {/* Lưới chữ thập canh tỉ lệ */}
@@ -502,11 +562,11 @@ export default function Step2ChonAnh() {
               <span className="font-mono text-xs text-[#6E5439]">THU NHỎ</span>
               <input
                 type="range"
-                min="0.6"
-                max="2.5"
+                min="1"
+                max="3"
                 step="0.05"
                 value={scale}
-                onChange={(e) => setScale(parseFloat(e.target.value))}
+                onChange={(e) => doiMucPhong(parseFloat(e.target.value))}
                 className="flex-1 accent-[#A8322A] cursor-pointer"
               />
               <span className="font-mono text-xs text-[#6E5439]">PHÓNG TO</span>

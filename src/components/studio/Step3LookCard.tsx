@@ -16,10 +16,8 @@ import {
 } from '../../lib/gemini';
 import { macThu } from '../../lib/tryOn';
 import { chonBoiCanhTuDong } from '../../data/backgrounds';
-import { DEMO_RESPONSES } from '../../data/demoResponses';
 import CompareLooksModal from './CompareLooksModal';
 import TryOnModal from './TryOnModal';
-import BanDaChonPanel from './BanDaChonPanel';
 import AiExplanationModal from './AiExplanationModal';
 import { BACKGROUNDS } from '../../data/backgrounds';
 import { Source } from '../../types';
@@ -46,8 +44,8 @@ export default function Step3LookCard() {
     try {
       const bg =
         BACKGROUNDS.find((b) => b.id === tryOnBackgroundId) ||
-        chonBoiCanhTuDong(selectedEvent?.id, contextSetup?.regionId);
-      const anhNguoiInput = userPhoto || DEMO_RESPONSES.renderLook.imageUrl;
+        chonBoiCanhTuDong(selectedEvent?.id, contextSetup?.regionId, lookState.mauChinh);
+      const anhNguoiInput = userPhoto || '';
       const res = await macThu({
         anhNguoi: anhNguoiInput,
         look: lookState,
@@ -113,7 +111,7 @@ export default function Step3LookCard() {
 
   const scoreBoiCanh = useMemo(() => {
     const topLevel = lookState.thuongY?.mucTrangTrong ?? 3;
-    const diff = Math.abs(topLevel - selectedEvent.mucTrangTrongYeuCau);
+    const diff = Math.abs(topLevel - (contextSetup.mucTrangTrong ?? selectedEvent.mucTrangTrongYeuCau));
     if (diff === 0) return 96;
     if (diff === 1) return 82;
     return 55;
@@ -124,7 +122,8 @@ export default function Step3LookCard() {
       lookState,
       selectedEvent,
       contextSetup.phongCach,
-      contextSetup.regionId
+      contextSetup.regionId,
+      contextSetup.nguoiMac
     );
   }, [lookState, selectedEvent, contextSetup]);
 
@@ -279,8 +278,8 @@ export default function Step3LookCard() {
       setLoadingImage(false);
     } else {
       setLoadingImage(true);
-      const bg = chonBoiCanhTuDong(selectedEvent?.id, contextSetup?.regionId);
-      const anhNguoiInput = userPhoto || DEMO_RESPONSES.renderLook.imageUrl;
+      const bg = chonBoiCanhTuDong(selectedEvent?.id, contextSetup?.regionId, lookState.mauChinh);
+      const anhNguoiInput = userPhoto || '';
       macThu({
         anhNguoi: anhNguoiInput,
         look: lookState,
@@ -431,165 +430,56 @@ export default function Step3LookCard() {
   }, [cultureFlagResult, lookState.thuongY]);
 
   // ---------------------------------------------------------------------------
-  // 7. BẢN GHÉP LỚP PHẲNG (FLAT COMPOSITE) - HIỆN NGAY LẬP TỨC
+  // 7. BIỂN CHÚ THÍCH BỘ ĐỒ - HIỆN KHI CHƯA CÓ ẢNH MẶC THỬ THẬT
+  // Không vẽ hình người hay trang phục. Chỉ có mẫu màu thật và tên từng lớp lấy từ lựa chọn.
   // ---------------------------------------------------------------------------
-  const renderFlatComposite = () => {
-    const garmentColor = lookState.mauChinh || '#16243A';
-    const isNhatBinh = lookState.thuongY?.id === 'G06';
-    const isGiaoLinh = lookState.thuongY?.id === 'G01' || lookState.thuongY?.id === 'G02';
-    const isAoTac = lookState.thuongY?.id === 'G05';
-    const hasMotif = Boolean(lookState.hoaVan);
+  const renderBienBoDo = () => {
+    const mauChinh = lookState.mauChinh || lookState.thuongY?.mauTruyenThong?.[0] || '#16243A';
+    const cacLop: { vaiTro: string; ten?: string; mau?: string }[] = [
+      { vaiTro: 'Thượng y', ten: lookState.thuongY?.ten, mau: mauChinh },
+      { vaiTro: 'Hạ y', ten: lookState.haY?.ten, mau: lookState.haY?.mauTruyenThong?.[0] },
+      { vaiTro: 'Thủ phục', ten: lookState.thuPhuc?.ten, mau: lookState.thuPhuc?.mauTruyenThong?.[0] },
+      { vaiTro: 'Hài', ten: lookState.hai?.ten, mau: lookState.hai?.mauTruyenThong?.[0] },
+      { vaiTro: 'Hoa văn', ten: lookState.hoaVan?.ten },
+    ];
 
     return (
-      <div className="w-full h-full relative bg-[#FBF8F2] flex flex-col items-center justify-center overflow-hidden p-6 select-none">
-        {/* Họa tiết góc kiểu thư tịch cổ */}
-        <div className="absolute top-2 left-2 w-3 h-3 border-t border-l border-[#C39A27]/60" />
-        <div className="absolute top-2 right-2 w-3 h-3 border-t border-r border-[#C39A27]/60" />
-        <div className="absolute bottom-2 left-2 w-3 h-3 border-b border-l border-[#C39A27]/60" />
-        <div className="absolute bottom-2 right-2 w-3 h-3 border-b border-r border-[#C39A27]/60" />
+      <div className="w-full h-full relative bg-[#F2EDE3] flex flex-col select-none @container">
+        {/* Mẫu màu chính, như một mẩu vải ghim trên biển */}
+        <div className="relative flex-[0_0_38%] border-b border-[#2C2A26]/15" style={{ backgroundColor: mauChinh }}>
+          <span className="absolute left-3 bottom-2 px-1.5 py-0.5 bg-[#FBF8F2]/90 font-mono text-[10px] text-[#2C2A26]">
+            {layTenMau(mauChinh)}
+          </span>
+        </div>
 
-        {/* Khung vẽ Vector trang phục truyền thống */}
-        <svg
-          viewBox="0 0 400 520"
-          className="w-full h-full max-h-[460px] drop-shadow-sm"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          {/* Trục chỉ số thẩm mỹ */}
-          <line x1="200" y1="30" x2="200" y2="490" stroke="#2C2A26" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.15" />
-          <line x1="60" y1="260" x2="340" y2="260" stroke="#2C2A26" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.15" />
-
-          {/* 1. Mũ / Khăn vấn */}
-          <g id="thủ_phục">
-            <ellipse cx="200" cy="78" rx="46" ry="18" fill="#2C2A26" />
-            <path d="M158,78 C158,62 242,62 242,78 C242,88 158,88 158,78 Z" fill="#201F1C" />
-            <path d="M165,77 C175,70 225,70 235,77" stroke="#C39A27" strokeWidth="1" opacity="0.5" />
-          </g>
-
-          {/* 2. Cổ và khuôn mặt cách điệu đoan trang */}
-          <circle cx="200" cy="98" r="24" fill="#E8DEC8" />
-          <rect x="194" y="116" width="12" height="18" fill="#DFD4BE" />
-
-          {/* 3. Hạ y: Quần lụa buông rủ */}
-          <g id="hạ_y">
-            <path d="M164,280 L146,450 L194,450 L198,320 Z" fill="#F2EDE3" stroke="#D8D0C2" strokeWidth="1" />
-            <path d="M236,280 L254,450 L206,450 L202,320 Z" fill="#F2EDE3" stroke="#D8D0C2" strokeWidth="1" />
-            {/* Nếp lụa rủ */}
-            <line x1="170" y1="300" x2="160" y2="440" stroke="#DFD7CA" strokeWidth="1" />
-            <line x1="230" y1="300" x2="240" y2="440" stroke="#DFD7CA" strokeWidth="1" />
-          </g>
-
-          {/* 4. Thượng y: Phom áo chính */}
-          <g id="thượng_y">
-            {isNhatBinh ? (
-              // Áo Nhật Bình cổ vuông dải ngũ hành
-              <g>
-                <path
-                  d="M150,132 L90,260 L130,270 L148,200 L146,360 L254,360 L252,200 L270,270 L310,260 L250,132 Z"
-                  fill={garmentColor}
+        <div className="flex-1 min-h-0 flex flex-col px-4 py-3 gap-2 overflow-hidden">
+          <p className="font-mono text-[10px] tracking-[0.14em] text-[#A8322A] m-0">CHƯA CÓ ẢNH MẶC THỬ</p>
+          <p className="font-display text-[clamp(16px,9cqw,26px)] leading-tight text-[#2C2A26] m-0">
+            {lookState.thuongY?.ten || 'Chưa chọn thượng y'}
+          </p>
+          <ul className="list-none m-0 p-0 mt-1 flex flex-col">
+            {cacLop.map((l) => (
+              <li
+                key={l.vaiTro}
+                className="flex items-center gap-2 py-1 border-t border-[#2C2A26]/10 font-sans text-[clamp(10px,4.2cqw,12px)] text-[#2C2A26] min-w-0"
+              >
+                <span
+                  className="w-2.5 h-2.5 shrink-0 border border-[#2C2A26]/20"
+                  style={{ backgroundColor: l.mau || 'transparent' }}
                 />
-                {/* Cổ Nhật Bình viền ngũ sắc */}
-                <rect x="180" y="132" width="40" height="140" fill="#A8322A" stroke="#C39A27" strokeWidth="1.5" />
-                <line x1="188" y1="132" x2="188" y2="272" stroke="#2D6A4F" strokeWidth="2" />
-                <line x1="194" y1="132" x2="194" y2="272" stroke="#C39A27" strokeWidth="2" />
-                <line x1="200" y1="132" x2="200" y2="272" stroke="#F2EDE3" strokeWidth="2" />
-                <line x1="206" y1="132" x2="206" y2="272" stroke="#16243A" strokeWidth="2" />
-                <line x1="212" y1="132" x2="212" y2="272" stroke="#A8322A" strokeWidth="2" />
-              </g>
-            ) : isGiaoLinh ? (
-              // Áo Giao Lĩnh vạt chéo
-              <g>
-                <path
-                  d="M152,132 L86,250 L128,265 L150,195 L144,365 L256,365 L250,195 L272,265 L314,250 L248,132 Z"
-                  fill={garmentColor}
-                />
-                {/* Vạt chéo giao lĩnh */}
-                <path d="M178,132 L225,230 L212,365" stroke="#C39A27" strokeWidth="2" opacity="0.75" />
-                <path d="M222,132 L185,210" stroke="#F2EDE3" strokeWidth="1.5" opacity="0.6" />
-              </g>
-            ) : isAoTac ? (
-              // Áo Tấc tay thụng dài quá gối
-              <g>
-                <path
-                  d="M152,130 L65,300 L125,320 L152,210 L142,390 L258,390 L248,210 L275,320 L335,300 L248,130 Z"
-                  fill={garmentColor}
-                />
-                {/* 5 Cúc gài ngũ thân */}
-                <circle cx="204" cy="144" r="3" fill="#C39A27" />
-                <circle cx="212" cy="162" r="3" fill="#C39A27" />
-                <circle cx="218" cy="184" r="3" fill="#C39A27" />
-                <circle cx="222" cy="208" r="3" fill="#C39A27" />
-                <circle cx="224" cy="234" r="3" fill="#C39A27" />
-                <path d="M192,130 L204,144 L224,240 L220,390" stroke="#0D1826" strokeWidth="1" opacity="0.4" />
-              </g>
-            ) : (
-              // Áo Ngũ Thân chuẩn mực tay chẽn
-              <g>
-                <path
-                  d="M154,130 L102,260 L138,272 L154,195 L148,368 L252,368 L246,195 L262,272 L298,260 L246,130 Z"
-                  fill={garmentColor}
-                />
-                {/* Cổ đứng năm khuy cài đoan trang */}
-                <rect x="188" y="124" width="24" height="12" rx="2" fill={garmentColor} stroke="#C39A27" strokeWidth="0.8" />
-                <circle cx="202" cy="138" r="2.5" fill="#C39A27" />
-                <circle cx="212" cy="158" r="2.5" fill="#C39A27" />
-                <circle cx="218" cy="180" r="2.5" fill="#C39A27" />
-                <circle cx="222" cy="204" r="2.5" fill="#C39A27" />
-                <circle cx="224" cy="230" r="2.5" fill="#C39A27" />
-                {/* Đường ráp vạt con và vạt cả */}
-                <path d="M198,136 L212,158 L224,230 L218,368" stroke="#0D1826" strokeWidth="1" opacity="0.3" />
-              </g>
-            )}
+                <span className="text-[#2C2A26]/70 shrink-0 w-[4.8em]">{l.vaiTro}</span>
+                <span className="truncate">{l.ten || 'Chưa chọn'}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-            {/* Họa tiết hoa văn ẩn chìm */}
-            {hasMotif && (
-              <g id="hoa_văn_ngực" opacity="0.6">
-                <circle cx="180" cy="220" r="18" stroke="#C39A27" strokeWidth="1" strokeDasharray="2 2" />
-                <path d="M172,220 C176,212 184,212 188,220 C184,228 176,228 172,220 Z" fill="#C39A27" opacity="0.4" />
-              </g>
-            )}
-          </g>
-
-          {/* 5. Đôi Hài cong cổ truyền */}
-          <g id="hài_chân">
-            <path d="M152,450 C146,450 142,462 148,464 L184,464 C188,464 190,458 184,450 Z" fill="#16243A" stroke="#C39A27" strokeWidth="0.8" />
-            <path d="M248,450 C254,450 258,462 252,464 L216,464 C212,464 210,458 216,450 Z" fill="#16243A" stroke="#C39A27" strokeWidth="0.8" />
-          </g>
-        </svg>
-
-        {/* Trạng thái ảnh */}
         {loadingImage && (
-          <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 bg-[#16243A] text-[#F2EDE3] border border-[#C39A27]/50 rounded-[1px] font-mono text-[10px] tracking-widest shadow-md">
+          <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 bg-[#16243A] text-[#F2EDE3] border border-[#C39A27]/50 rounded-[1px] font-mono text-[10px] tracking-widest shadow-md">
             <span className="w-1.5 h-1.5 bg-[#C39A27] animate-ping" />
-            <span>ĐANG DỰNG ẢNH AI</span>
+            <span>ĐANG DỰNG ẢNH</span>
           </div>
         )}
-
-        {/* Bản ghép lớp phẳng từ màu và tên các món */}
-        <div className="absolute inset-x-3 bottom-3 bg-[#0D1826]/85 backdrop-blur-xs border border-[#C39A27]/40 p-2.5 text-[#F2EDE3]">
-          <div className="flex items-center justify-between pb-1 border-b border-[#F2EDE3]/15">
-            <span className="micro-label text-[#C39A27]">BẢN GHÉP LỚP PHẲNG</span>
-            <span className="font-mono text-[9px] text-[#F2EDE3]/60">{sixLayersText.split(' · ').length} LỚP</span>
-          </div>
-          <div className="grid grid-cols-2 gap-x-2 gap-y-1 pt-1.5 text-[10px] font-mono">
-            <div className="flex items-center gap-1.5 truncate">
-              <span className="w-2.5 h-2.5 rounded-full shrink-0 border border-white/20" style={{ backgroundColor: lookState.mauChinh || '#16243A' }} />
-              <span className="truncate">{lookState.thuongY?.ten || 'Áo ngũ thân'}</span>
-            </div>
-            <div className="flex items-center gap-1.5 truncate">
-              <span className="w-2.5 h-2.5 rounded-full shrink-0 border border-white/20" style={{ backgroundColor: lookState.haY?.mauTruyenThong?.[0] || '#F2EDE3' }} />
-              <span className="truncate">{lookState.haY?.ten || 'Quần lụa trắng'}</span>
-            </div>
-            <div className="flex items-center gap-1.5 truncate">
-              <span className="w-2.5 h-2.5 rounded-full shrink-0 border border-white/20" style={{ backgroundColor: lookState.thuPhuc?.mauTruyenThong?.[0] || '#2C2A26' }} />
-              <span className="truncate">{lookState.thuPhuc?.ten || 'Khăn vấn'}</span>
-            </div>
-            <div className="flex items-center gap-1.5 truncate">
-              <span className="w-2.5 h-2.5 rounded-full shrink-0 border border-white/20" style={{ backgroundColor: lookState.hai?.mauTruyenThong?.[0] || '#16243A' }} />
-              <span className="truncate">{lookState.hai?.ten || 'Hài nhung'}</span>
-            </div>
-          </div>
-        </div>
       </div>
     );
   };
@@ -597,6 +487,9 @@ export default function Step3LookCard() {
   // ---------------------------------------------------------------------------
   // RENDER CHÍNH — BỐ CỤC 12 CỘT
   // ---------------------------------------------------------------------------
+  // Ảnh AI chỉ hiện khi có cả ảnh người dùng; nhãn AI và nút dựng lại theo đúng điều kiện này.
+  const dangHienAnhAI = Boolean(isAiImage && (activeTryOnImage || aiImageUrl) && userPhoto);
+
   return (
     <div className="w-full flex flex-col gap-6 select-none animate-in fade-in duration-200">
       {/* LƯỚI 12 CỘT */}
@@ -604,7 +497,7 @@ export default function Step3LookCard() {
         {/* ===================================================================
             CỘT TRÁI (6 CỘT): KHỐI ẢNH LOOK VÀ KHỐI BẠN ĐÃ CHỌN NẰM NGAY CẠNH NHAU
             =================================================================== */}
-        <div className="lg:col-span-6 grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+        <div className="lg:col-span-4 flex flex-col gap-4">
           <div className="flex flex-col gap-3">
             <div className="relative aspect-[3/4] w-full rounded-[2px] border border-[#C39A27] overflow-hidden bg-[#FBF8F2] shadow-sm">
               {isHoldingCompare && originalImage ? (
@@ -618,17 +511,17 @@ export default function Step3LookCard() {
                     ẢNH GỐC BAN ĐẦU
                   </div>
                 </div>
-              ) : isAiImage && (activeTryOnImage || aiImageUrl) && userPhoto ? (
+              ) : dangHienAnhAI ? (
                 <img
                   src={activeTryOnImage || aiImageUrl || ''}
                   alt={nameData?.tenLook || 'Phối trang Mặc Việt'}
                   className="w-full h-full object-cover object-center animate-in fade-in duration-300"
                 />
               ) : (
-                renderFlatComposite()
+                renderBienBoDo()
               )}
 
-              {/* NÚT TẢI ẢNH VỀ MÁY (FILE TẢI VỀ CÓ ĐÓNG DẤU ANH DO AI TAO) */}
+              {/* NÚT TẢI ẢNH VỀ MÁY (FILE TẢI VỀ CÓ ĐÓNG DẤU ẢNH DO AI TẠO) */}
               {!isHoldingCompare && isAiImage && (activeTryOnImage || aiImageUrl) && (
                 <a
                   href={activeTryOnImage || aiImageUrl || ''}
@@ -641,17 +534,16 @@ export default function Step3LookCard() {
               )}
             </div>
 
+            {dangHienAnhAI && (
+              <>
             {/* 3. DƯỚI ẢNH: HAI DÒNG NHÃN BẮT BUỘC THEO QUY CHUẨN */}
             <div className="pt-2 flex flex-col gap-1 border-t border-[#2C2A26]/12">
-              <div className="font-mono text-[11px] font-bold text-[#A8322A] tracking-wider uppercase">
-                ANH MINH HOA DO AI DUNG
-              </div>
               <button
                 type="button"
                 onClick={() => setShowWhyModal(true)}
                 className="text-left font-sans text-xs text-[#6E5439] hover:text-[#A8322A] hover:underline transition-colors cursor-pointer leading-snug"
               >
-                Chi tiết cổ áo, số khuy, hoa văn trong ảnh có thể chưa đúng. Đối chiếu với bảng bên cạnh.
+                Ảnh minh hoạ do AI dựng. Chi tiết cổ áo, khuy, hoa văn có thể chưa đúng, đối chiếu với danh sách bên dưới.
               </button>
             </div>
 
@@ -676,6 +568,9 @@ export default function Step3LookCard() {
                 Mỗi lần dựng cho kết quả hơi khác.
               </span>
             </div>
+
+              </>
+            )}
 
             {/* NÚT SO VỚI ẢNH GỐC: GIỮ CHUỘT ĐỂ XEM ẢNH TRƯỚC KHI THAY ĐỒ */}
             {originalImage && (activeTryOnImage || aiImageUrl) && (
@@ -706,19 +601,18 @@ export default function Step3LookCard() {
             )}
 
             {/* DƯỚI ẢNH: HÀNG MONO NHỎ GHI TÊN 6 LỚP ĐANG MẶC CÁCH NHAU DẤU CHẤM GIỮA */}
-            <div className="font-mono text-xs text-[#6E5439] tracking-tight leading-relaxed pt-1 px-0.5">
+            <div className="font-sans text-sm text-[#2C2A26] leading-relaxed pt-1 px-0.5">
+              <span className="block font-mono text-[10px] uppercase tracking-wider text-[#6E5439] mb-1">Bộ đang mặc</span>
               {sixLayersText}
             </div>
           </div>
 
-          {/* CỘT NẰM NGAY CẠNH ẢNH: KHỐI BẠN ĐÃ CHỌN */}
-          <BanDaChonPanel onOpenWhyModal={() => setShowWhyModal(true)} />
         </div>
 
         {/* ===================================================================
             CỘT PHẢI (6 CỘT): BỐN KHỐI NỘI DUNG XẾP DỌC, NGĂN BẰNG ĐƯỜNG KẺ TÓC
             =================================================================== */}
-        <div className="lg:col-span-6 flex flex-col divide-y divide-[#2C2A26]/15">
+        <div className="lg:col-span-8 flex flex-col divide-y divide-[#2C2A26]/15">
           {/* -----------------------------------------------------------------
               KHỐI 1 — TÊN VÀ ĐIỂM
               ----------------------------------------------------------------- */}
@@ -783,19 +677,11 @@ export default function Step3LookCard() {
                       : 'text-[#2D6A4F]'
                   }`}
                 >
-                  {scoreVanHoa}
-                </div>
-                <div className="h-[2px] w-full bg-[#2C2A26]/15 mt-2">
-                  <div
-                    className={`h-full transition-all duration-500 ${
-                      cultureFlagResult.mucDoChung === 'do'
-                        ? 'bg-[#A8322A]'
-                        : cultureFlagResult.mucDoChung === 'vang'
-                        ? 'bg-[#C39A27]'
-                        : 'bg-[#2D6A4F]'
-                    }`}
-                    style={{ width: `${scoreVanHoa}%` }}
-                  />
+                  {cultureFlagResult.mucDoChung === 'do'
+                    ? 'Cần cân nhắc'
+                    : cultureFlagResult.mucDoChung === 'vang'
+                    ? 'Hơi lệch'
+                    : 'Chưa lệch'}
                 </div>
               </div>
             </div>
@@ -1087,9 +973,7 @@ export default function Step3LookCard() {
                 {isAiImage && aiImageUrl ? (
                   <img src={aiImageUrl} alt="Poster" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="p-3 transform scale-90">
-                    {renderFlatComposite()}
-                  </div>
+                  renderBienBoDo()
                 )}
               </div>
 
@@ -1118,7 +1002,7 @@ export default function Step3LookCard() {
                 <button
                   type="button"
                   onClick={() => {
-                    const posterImg = isAiImage && aiImageUrl ? aiImageUrl : (userPhoto || DEMO_RESPONSES.renderLook.imageUrl);
+                    const posterImg = isAiImage && aiImageUrl ? aiImageUrl : (userPhoto || '');
                     exportLookCardPoster({
                       tenLook: nameData?.tenLook || 'Chàm Phố Đoan Trang',
                       caption: nameData?.captionNgan || 'Nét đĩnh đạc của tà áo cổ truyền giữa nhịp sống đương đại',
@@ -1127,6 +1011,7 @@ export default function Step3LookCard() {
                       mauChinh: lookState.mauChinh || '#16243A',
                       suKien: selectedEvent.ten,
                       scoreMau: scoreMau,
+                      laAnhAI: Boolean(isAiImage && aiImageUrl),
                     });
                   }}
                   className="px-5 py-2.5 bg-[#16243A] text-[#F2EDE3] font-mono text-xs uppercase tracking-wider hover:bg-[#0D1826] cursor-pointer"

@@ -22,7 +22,7 @@ export default function BanDaChonPanel({ className = '', onOpenWhyModal }: BanDa
   // Xác định bối cảnh nền
   const currentBg: Background =
     BACKGROUNDS.find((b) => b.id === tryOnBackgroundId) ||
-    chonBoiCanhTuDong(selectedEvent?.id, selectedRegion?.id);
+    chonBoiCanhTuDong(selectedEvent?.id, selectedRegion?.id, mainColorHex);
 
   // Phụ kiện
   const phuKienText =
@@ -159,9 +159,6 @@ export default function BanDaChonPanel({ className = '', onOpenWhyModal }: BanDa
               </span>
               <span className="font-display text-xs text-[#2C2A26] font-medium truncate">
                 {currentBg.ten}
-              </span>
-              <span className="font-sans text-[10px] text-[#6E5439]/80 line-clamp-1">
-                {currentBg.moTaChoAI}
               </span>
             </div>
           </div>

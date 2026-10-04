@@ -281,6 +281,8 @@ export const store = {
     state = {
       ...state,
       contextSetup: { ...state.contextSetup, ...partial },
+      // Bối cảnh đổi thì prompt ảnh đổi, nên ảnh đang có không còn khớp
+      isTryOnStale: state.activeTryOnImage ? true : state.isTryOnStale,
     };
     emitChange();
   },

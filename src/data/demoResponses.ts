@@ -72,12 +72,6 @@ export const DEMO_RESPONSES = {
     ],
   },
 
-  renderLook: {
-    // Trả về ảnh mock SVG data URI trang nhã
-    imageUrl:
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800"><rect width="600" height="800" fill="%23F2EDE3"/><rect x="40" y="40" width="520" height="720" fill="%23FBF8F2" stroke="%232C2A26" stroke-width="2"/><circle cx="300" cy="220" r="60" fill="%23D8C8B3"/><ellipse cx="300" cy="180" rx="80" ry="25" fill="%232C2A26"/><path d="M220,280 L140,520 L200,550 L250,420 L240,680 L360,680 L350,420 L400,550 L460,520 L380,280 Z" fill="%2316243A"/><rect x="250" y="680" width="45" height="50" fill="%23F2EDE3"/><rect x="305" y="680" width="45" height="50" fill="%23F2EDE3"/><text x="300" y="740" font-family="monospace" font-size="14" fill="%236E5439" text-anchor="middle">MẶC VIỆT MOCKUP · CHÀM NGŨ THÂN</text></svg>',
-  },
-
   askCuNghe: {
     traLoi:
       'Chào bạn trẻ. Tôi mừng khi thấy người trẻ ngày nay tìm về nếp áo ông cha. Về áo ngũ thân tay chẽn, bạn cứ nhớ cái cốt là năm thân ghép lại và năm cúc gài ngay ngắn. Áo này mặc vào người tự khắc đứng thẳng, đi đứng từ tốn. Mùa nóng thì người xưa mặc vải the mỏng mát rượi, mùa đông thì mặc gấm lót bông ấm áp. Chơi cổ phục cốt ở cái tâm kính trọng và biết mình đang mặc câu chuyện gì trên người, chứ không cốt ở chỗ khoe mẽ.',

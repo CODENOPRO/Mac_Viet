@@ -1,5 +1,4 @@
 import { Garment } from '../types';
-import { GARMENT_REFERENCE_IMAGES } from './garmentSvgs';
 
 const RAW_GARMENTS: Omit<Garment, 'anh'>[] = [
   {
@@ -274,8 +273,34 @@ const RAW_GARMENTS: Omit<Garment, 'anh'>[] = [
   }
 ];
 
+// Mô tả cấu trúc cho model sinh ảnh. Bản làm việc, cần người am hiểu cổ phục đọc lại.
+const MO_TA_HINH_ANH: Record<string, string> = {
+  G01: 'Vietnamese cross-collar robe: the left front panel crosses over the right and ties at the right side, no buttons, wide sleeves, ankle length',
+  G02: 'Vietnamese round-collar robe: a round neckline fastening at the right shoulder, wide sleeves, ankle length, loose straight body',
+  G03: 'Vietnamese four-panel tunic: open front, the two front panels hang loose or are knotted together at the waist, no buttons, narrow sleeves, worn over a diamond-shaped yem bodice and a long sash, ankle length',
+  G04: 'Vietnamese five-panel tunic: low standing collar, closure running diagonally from the collar to under the right arm with five small knotted buttons, narrow fitted sleeves, calf length, side slits from the waist down',
+  G05: 'Vietnamese ceremonial five-panel robe: low standing collar, closure running diagonally from the collar to under the right arm with small knotted buttons, very wide flowing sleeves that hang well below the wrists, calf length, worn over wide trousers',
+  G06: 'Nguyen court ceremonial robe for women: a wide flat rectangular collar panel lying over the chest and shoulders with two long embroidered bands hanging down the front, wide sleeves, ankle length',
+  G08: 'modern Vietnamese ao dai: high standing collar, closely fitted bodice, long fitted sleeves, two long front and back panels split from the waist down to the ankles, worn over wide trousers',
+  G09: 'Southern Vietnamese ba ba shirt: loose hip-length shirt, round or slight V neckline, buttons down the front, two patch pockets at the lower front, side slits, long sleeves',
+  G10: 'wide straight-leg silk trousers falling to the floor',
+  G11: 'dark ankle-length wrap skirt, plain fabric, no waistband visible',
+  G12: 'dark fabric wrapped around the head into a neat round ring over the hair',
+  G13: 'pre-pleated rigid headwear with neat horizontal folds forming a low drum shape, worn straight on the head',
+  G14: 'very wide flat-topped circular palm-leaf hat with long silk tassel straps hanging down at both sides',
+  G15: 'closed cloth shoes with a slightly upturned pointed toe and small embroidery',
+  G16: 'diamond-shaped bodice tied at the neck and back, its top edge visible at the neckline',
+};
+
+// Chỉ ảnh chụp hiện vật thật mới được gửi cho model làm tham chiếu.
+const ANH_THAM_CHIEU_THAT: Record<string, string> = {
+  G03: '/anh/tl-tu-than-bt.jpg',
+  G09: '/anh/tl-ba-ba-bt.jpg',
+};
+
 export const GARMENTS: Garment[] = RAW_GARMENTS.map((g) => ({
   ...g,
-  anh: GARMENT_REFERENCE_IMAGES[g.id] || ''
+  moTaHinhAnh: MO_TA_HINH_ANH[g.id],
+  anhThamChieuThat: ANH_THAM_CHIEU_THAT[g.id],
 }));
 

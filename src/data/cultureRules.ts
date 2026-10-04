@@ -15,13 +15,7 @@ export const CULTURE_RULES: CultureRule[] = [
     mucDo: 'do',
     thongDiep: 'Nhật Bình là phẩm phục của hậu phi và mệnh phụ triều Nguyễn, gắn với nghi lễ cung đình. Đưa vào bối cảnh thường ngày làm lớp nghĩa nghi lễ của nó mờ đi.',
     cachSua: [
-      {
-        moTa: 'Đổi sang áo tấc tay thụng trang trọng vừa vặn',
-        apDung: (look: LookState): LookState => {
-          const aoTac = GARMENTS.find((g) => g.id === 'G05');
-          return { ...look, thuongY: aoTac || look.thuongY };
-        },
-      },
+      // Không gợi ý áo tấc: garments.ts ghi áo tấc là lễ phục, không dùng khi đi chơi thường ngày.
       {
         moTa: 'Đổi sang áo ngũ thân tay chẽn thanh thoát',
         apDung: (look: LookState): LookState => {
@@ -29,13 +23,20 @@ export const CULTURE_RULES: CultureRule[] = [
           return { ...look, thuongY: nguThan || look.thuongY };
         },
       },
+      {
+        moTa: 'Đổi sang áo dài tân thời, hợp dạo phố và chụp ảnh',
+        apDung: (look: LookState): LookState => {
+          const aoDai = GARMENTS.find((g) => g.id === 'G08');
+          return { ...look, thuongY: aoDai || look.thuongY };
+        },
+      },
     ],
     sourceIds: ['S01', 'S03', 'S04'],
     doChacChan: 'da_xac_lap',
     phanLoaiLoi: 'nghi_le',
     apDung: (look: LookState): LookState => {
-      const aoTac = GARMENTS.find((g) => g.id === 'G05');
-      return { ...look, thuongY: aoTac || look.thuongY };
+      const nguThan = GARMENTS.find((g) => g.id === 'G04');
+      return { ...look, thuongY: nguThan || look.thuongY };
     },
     viDu: {
       thuongY: GARMENTS.find((g) => g.id === 'G06') || null,
@@ -50,7 +51,7 @@ export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-02',
     ten: 'Hoa văn rồng năm móng trên thường phục',
-    dieuKien: 'Hoa văn rồng năm móng (M08) xuất hiện trên trang phục dân gian hoặc thường phục',
+    dieuKien: 'Hoa văn rồng năm móng xuất hiện trên trang phục dân gian hoặc thường phục',
     kiemTra: (look: LookState): boolean => {
       return look.hoaVan?.id === 'M08';
     },
@@ -92,7 +93,7 @@ export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-03',
     ten: 'Hoa văn phượng hoàng trong bối cảnh dân gian',
-    dieuKien: 'Hoa văn phượng hoàng (M07) dùng trong sự kiện mức trang trọng từ 3 trở xuống',
+    dieuKien: 'Hoa văn phượng hoàng dùng trong dịp thường ngày, dạo phố hoặc có lễ nhỏ',
     kiemTra: (look: LookState, boiCanh?: EventContext): boolean => {
       const isPhuong = look.hoaVan?.id === 'M07';
       const isLowFormality = boiCanh ? boiCanh.mucTrangTrongYeuCau <= 3 : false;
@@ -136,7 +137,7 @@ export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-04',
     ten: 'Màu vàng hoàng kim chiếm tỷ lệ lớn',
-    dieuKien: 'Màu vàng hoàng kim (#C39A27) chiếm trên 50% diện tích ngoài bối cảnh biểu diễn',
+    dieuKien: 'Màu vàng hoàng kim chiếm trên một nửa bộ trang phục, ngoài bối cảnh biểu diễn',
     kiemTra: (look: LookState, boiCanh?: EventContext): boolean => {
       if (boiCanh?.id === 'E08') return false;
       return look.mauChinh?.toLowerCase() === '#c39a27';
@@ -170,7 +171,7 @@ export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-05',
     ten: 'Trang phục toàn sắc trắng trong đám cưới',
-    dieuKien: 'Toàn bộ trang phục sắc trắng hoặc ngà trong sự kiện đám cưới (E03)',
+    dieuKien: 'Toàn bộ trang phục màu trắng hoặc ngà khi đi dự đám cưới',
     kiemTra: (look: LookState, boiCanh?: EventContext): boolean => {
       if (boiCanh?.id !== 'E03') return false;
       const isNga = (c?: string) => c === '#F2EDE3' || c === '#FBF8F2' || c?.toLowerCase() === '#ffffff';
@@ -208,7 +209,7 @@ export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-06',
     ten: 'Đơn sắc thuần trắng hoặc thuần đen ngày Tết',
-    dieuKien: 'Toàn bộ trang phục mang sắc trắng ngà hoặc thuần đen trong dịp Tết và du xuân (E01)',
+    dieuKien: 'Toàn bộ trang phục màu trắng ngà hoặc toàn màu đen trong dịp Tết và du xuân',
     kiemTra: (look: LookState, boiCanh?: EventContext): boolean => {
       if (boiCanh?.id !== 'E01') return false;
       const isAllWhite = look.mauChinh === '#F2EDE3' || look.mauChinh === '#FBF8F2';
@@ -244,7 +245,7 @@ export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-07',
     ten: 'Khách mời mặc sắc đỏ điều hoặc hoàng rực rỡ ở đám cưới',
-    dieuKien: 'Khách mời mặc sắc đỏ điều (#A8322A) hoặc hoàng kim trong lễ cưới (E03)',
+    dieuKien: 'Khách mời mặc màu đỏ điều hoặc vàng hoàng kim rực trong lễ cưới',
     kiemTra: (look: LookState, boiCanh?: EventContext): boolean => {
       if (boiCanh?.id !== 'E03') return false;
       const isDieuOrHoang = look.mauChinh === '#A8322A' || look.mauChinh === '#C39A27' || look.mauChinh === '#E2C15E';
@@ -279,7 +280,7 @@ export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-08',
     ten: 'Thiếu kín đáo trong không gian tự viện lễ chùa',
-    dieuKien: 'Chỉ mặc yếm hoặc trang phục hở vai khi tham gia lễ chùa (E04)',
+    dieuKien: 'Chỉ mặc yếm hoặc trang phục hở vai khi đi lễ chùa, đền',
     kiemTra: (look: LookState, boiCanh?: EventContext): boolean => {
       if (boiCanh?.id !== 'E04') return false;
       const onlyYem = look.thuongY?.id === 'G16';
@@ -305,7 +306,7 @@ export const CULTURE_RULES: CultureRule[] = [
       },
     ],
     sourceIds: ['S10'],
-    doChacChan: 'da_xac_lap',
+    doChacChan: 'thuc_hanh_hien_nay',
     phanLoaiLoi: 'nghi_le',
     apDung: (look: LookState): LookState => {
       const nguThan = GARMENTS.find((g) => g.id === 'G04');
@@ -324,7 +325,7 @@ export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-09',
     ten: 'Mấn hoặc khăn Huế phối cùng áo bà ba Nam Bộ',
-    dieuKien: 'Khăn vấn hoặc khăn đóng kiểu Huế (G12, G13) kết hợp áo bà ba Nam Bộ (G09)',
+    dieuKien: 'Khăn vấn hoặc khăn đóng kiểu Huế đi cùng áo bà ba Nam Bộ',
     kiemTra: (look: LookState): boolean => {
       const isBaBa = look.thuongY?.id === 'G09';
       const isKhanHue = look.thuPhuc?.id === 'G12' || look.thuPhuc?.id === 'G13';
@@ -362,7 +363,7 @@ export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-10',
     ten: 'Nón quai thao Bắc Bộ lạc địa giới văn hoá',
-    dieuKien: 'Nón quai thao Bắc Bộ (G14) được chọn khi bối cảnh vùng là Nam Bộ hoặc Trung Bộ',
+    dieuKien: 'Nón quai thao Bắc Bộ được chọn khi vùng là Nam Bộ hoặc Trung Bộ',
     kiemTra: (look: LookState, _boiCanh?: EventContext, regionId?: string): boolean => {
       const isNonQuaiThao = look.thuPhuc?.id === 'G14';
       const isSouthOrCentral = regionId === 'R02' || regionId === 'R03' || regionId === 'trung' || regionId === 'nam';
@@ -393,7 +394,7 @@ export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-11',
     ten: 'Váy đụp Bắc Bộ phối cùng áo dài tân thời',
-    dieuKien: 'Váy đụp dân gian (G11) đi cùng áo dài Le Mur tân thời (G08)',
+    dieuKien: 'Váy đụp dân gian đi cùng áo dài tân thời',
     kiemTra: (look: LookState): boolean => {
       const isAoDaiTanThoi = look.thuongY?.id === 'G08';
       const isVayDup = look.haY?.id === 'G11';
@@ -430,7 +431,7 @@ export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-12',
     ten: 'Áo tứ thân mang hoa văn cung đình',
-    dieuKien: 'Áo tứ thân dân gian (G03) kết hợp hoa văn hoàng gia phượng hoàng (M07) hoặc rồng (M08)',
+    dieuKien: 'Áo tứ thân dân gian đi cùng hoa văn hoàng gia như phượng hoặc rồng',
     kiemTra: (look: LookState): boolean => {
       const isTuThan = look.thuongY?.id === 'G03';
       const isRoyalMotif = look.hoaVan?.id === 'M07' || look.hoaVan?.id === 'M08';
@@ -471,7 +472,7 @@ export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-13',
     ten: 'Áo giao lĩnh phối phụ kiện đương đại',
-    dieuKien: 'Áo giao lĩnh (G01) kết hợp sneaker hoặc phụ kiện tân thời ngoài không gian dạo phố sáng tạo (E07, E08)',
+    dieuKien: 'Áo giao lĩnh đi cùng giày thể thao hoặc phụ kiện hiện đại, ngoài bối cảnh dạo phố và biểu diễn',
     kiemTra: (look: LookState, boiCanh?: EventContext): boolean => {
       const isGiaoLinh = look.thuongY?.id === 'G01';
       const hasModernAcc = Boolean(look.phuKienHienDai);
@@ -510,7 +511,7 @@ export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-14',
     ten: 'Sneaker đi cùng áo tấc trong nghi lễ gia tiên',
-    dieuKien: 'Giày thể thao hiện đại đi kèm áo tấc trang trọng trong lễ cúng giỗ gia tiên (E05)',
+    dieuKien: 'Giày thể thao hiện đại đi cùng áo tấc trong lễ giỗ, lễ gia tiên',
     kiemTra: (look: LookState, boiCanh?: EventContext): boolean => {
       const isAoTac = look.thuongY?.id === 'G05';
       const hasSneaker = Boolean(look.phuKienHienDai);
@@ -730,7 +731,7 @@ export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-20',
     ten: 'Cổ áo hoặc vạt áo buông lỏng khi hành lễ',
-    dieuKien: 'Cổ áo giao lĩnh hay ngũ thân mặc buông lỏng hoặc lệch vạt trong nghi lễ trang nghiêm (E04, E05)',
+    dieuKien: 'Cổ áo giao lĩnh hay ngũ thân mặc buông lỏng hoặc lệch vạt trong lễ chùa, lễ gia tiên',
     kiemTra: (look: LookState, boiCanh?: EventContext): boolean => {
       const isSolemn = boiCanh?.id === 'E04' || boiCanh?.id === 'E05';
       const isTradTop = look.thuongY?.id === 'G01' || look.thuongY?.id === 'G04';

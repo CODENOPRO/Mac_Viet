@@ -2,12 +2,12 @@ import { useState, useRef, useLayoutEffect } from 'react';
 import { gsap, ScrollTrigger } from '../../lib/gsap';
 import { store } from '../../lib/store';
 import { GARMENTS } from '../../data/garments';
-import { REGIONS, ISLAND_TERRITORIES } from '../../data/regions';
 import { SOURCES } from '../../data/sources';
-import { SO_HIEN_VAT, SO_LUAT, SO_NGUON } from '../../data/constants';
-import { RegionId, Garment } from '../../types';
-import BanDoVietNam from '../shared/BanDoVietNam';
-import CultureGuardDemo from './CultureGuardDemo';
+import { Garment } from '../../types';
+import HeroTienSanh from './HeroTienSanh';
+import GianDiaDu from './GianDiaDu';
+import PhongVanDe from './PhongVanDe';
+import PhongThucHanh from './PhongThucHanh';
 
 interface FAQItem {
   id: number;
@@ -34,7 +34,7 @@ const FAQS: FAQItem[] = [
   {
     id: 4,
     question: 'Dữ liệu của app lấy từ đâu?',
-    answer: 'Mọi thông tin trong Mặc Việt được tổng hợp và đối chiếu từ 12 nguồn tư liệu xác thực. Nòng cốt dựa trên sách khảo cứu Ngàn năm áo mũ (Trần Quang Đức), các bộ sử liệu chính thống như Đại Nam thực lục, Khâm định Đại Nam hội điển sự lệ, và hiện vật lưu trữ tại Bảo tàng Lịch sử Quốc gia, Bảo tàng Cổ vật Cung đình Huế.',
+    answer: `Mặc Việt dựa trên ${SOURCES.length} nguồn. ${SOURCES.filter((s) => s.kiemChung.cach !== 'chua_cong_bo').length} nguồn là sách, sử liệu và hiện vật bảo tàng, mỗi nguồn kèm liên kết để bạn tự kiểm, nòng cốt là sách Ngàn năm áo mũ (Trần Quang Đức), Đại Nam thực lục, Khâm định Đại Nam hội điển sự lệ cùng hiện vật tại các bảo tàng. ${SOURCES.filter((s) => s.kiemChung.cach === 'chua_cong_bo').length} nguồn còn lại là quan sát thực hành hiện nay, chưa có bản công bố, và luật nào dựa vào chúng đều ghi rõ là chỉ mang tính gợi ý. Bấm vào dòng Nguồn ở bất kỳ đâu trong app để xem cách kiểm chứng.`,
   },
   {
     id: 5,
@@ -48,34 +48,22 @@ const FAQS: FAQItem[] = [
   },
 ];
 
+
+const TEN_VUNG: Record<string, string> = {
+  bac: 'Bắc Bộ',
+  trung: 'Trung Bộ',
+  nam: 'Nam Bộ',
+  tay_bac: 'Tây Bắc',
+  toan_quoc: 'Toàn quốc',
+};
 export default function Landing() {
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // State cho Phòng 4: Địa dư
-  const [selectedRegionId, setSelectedRegionId] = useState<string>('R01');
-  const [selectedIsland, setSelectedIsland] = useState<'HOANG_SA' | 'TRUONG_SA' | null>(null);
 
   // State xem chi tiết hiện vật
   const [selectedGarment, setSelectedGarment] = useState<Garment | null>(null);
 
   // State mở accordion Hỏi đáp ở Phòng 6
   const [openFaqId, setOpenFaqId] = useState<number | null>(null);
-
-  const regionCodeMap: Record<string, RegionId> = {
-    R01: 'bac',
-    R02: 'trung',
-    R03: 'nam',
-    R04: 'tay_bac',
-  };
-
-  const targetRegion = regionCodeMap[selectedRegionId] || 'bac';
-  const currentRegionData = REGIONS.find((r) => r.id === selectedRegionId) || REGIONS[0];
-  const currentIslandData = selectedIsland ? ISLAND_TERRITORIES[selectedIsland] : null;
-
-  // Lọc hiện vật theo vùng đang chọn
-  const regionGarments = GARMENTS.filter(
-    (g) => g.vung.includes(targetRegion) || g.vung.includes('toan_quoc')
-  );
 
   useLayoutEffect(() => {
     const el = containerRef.current;
@@ -149,135 +137,14 @@ export default function Landing() {
   return (
     <div
       ref={containerRef}
+      data-landing
       className="w-full bg-[#FBF8F2] text-[#2C2A26] selection:bg-[#A8322A] selection:text-[#F2EDE3] relative"
     >
-      {/* ========================================================================= */}
-      {/* PHÒNG 1: TIỀN SẢNH BẢO TÀNG (Lời mở + Hiện vật áo tứ thân tráng lệ)         */}
-      {/* ========================================================================= */}
-      <section
-        id="phong-1"
-        className="museum-room relative w-full min-h-[100svh] flex flex-col md:flex-row items-stretch justify-between bg-[#FBF8F2] border-b border-[#2C2A26]/12 overflow-hidden"
-      >
-        {/* Nửa trái: Lời mở đầu sảnh trưng bày */}
-        <div className="room-text w-full md:w-[46%] p-8 sm:p-12 md:p-16 lg:p-20 flex flex-col justify-between z-10">
-          <div>
-            <div className="flex items-center gap-2 mb-8">
-              <span className="font-mono text-xs font-semibold tracking-widest text-[#A8322A] uppercase">
-                MẶC VIỆT
-              </span>
-              <span className="text-[#2C2A26]/30">·</span>
-              <span className="font-mono text-[11px] tracking-wider text-[#2C2A26]/60 uppercase">
-                PHÒNG TRƯNG BÀY
-              </span>
-            </div>
+      {/* PHÒNG 1: TIỀN SẢNH */}
+      <HeroTienSanh />
 
-            <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-light text-[#2C2A26] leading-[1.04] tracking-tight mb-6">
-              Người Việt mặc lại áo của mình.
-            </h1>
-
-            <p className="font-sans text-base sm:text-lg text-[#2C2A26]/75 leading-relaxed max-w-lg mb-10">
-              Ứng dụng khảo cứu và phối trang phục truyền thống Việt Nam theo điển chế, không gian và cá tính.
-            </p>
-
-            <div>
-              <button
-                type="button"
-                onClick={() => store.setScreen('studio')}
-                className="px-8 py-4 bg-[#A8322A] text-[#F2EDE3] hover:bg-[#8F2821] text-xs font-mono uppercase tracking-widest transition-all duration-200 corner-mark cursor-pointer shadow-sm active:scale-[0.98] inline-flex items-center gap-3"
-              >
-                <span>BƯỚC VÀO XƯỞNG PHỐI</span>
-                <span>→</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Dấu chỉ hướng chân sảnh */}
-          <div className="pt-12 text-[#2C2A26]/40 font-mono text-[11px] tracking-wider flex items-center gap-2">
-            <span>↓</span>
-            <span>BƯỚC TIẾP QUA CÁC PHÒNG</span>
-          </div>
-        </div>
-
-        {/* Nửa phải: Tấm ảnh đứng hiện vật thật rực rỡ cao trọn chiều cao */}
-        <div className="room-visual relative w-full md:w-[54%] min-h-[50vh] md:min-h-full bg-[#F2EDE3] overflow-hidden flex items-center justify-center anh-hien-vat">
-          <img
-            src="/anh/tl-tu-than-bt.jpg"
-            alt="Hiện vật áo tứ thân, yếm đào, khăn mỏ quạ trên ma-nơ-canh tại Bảo tàng Dân tộc học Việt Nam"
-            className="w-full h-full object-cover"
-            style={{ objectPosition: '50% 35%' }}
-          />
-
-          {/* Biển chú thích bảo tàng đặt trang trọng ở góc */}
-          <div className="absolute bottom-6 right-6 md:bottom-8 md:right-8 bg-[#FBF8F2]/95 backdrop-blur-xs border border-[#2C2A26]/20 p-4 max-w-xs shadow-md corner-mark text-[#2C2A26]">
-            <span className="font-mono text-[10px] text-[#A8322A] block uppercase tracking-wider mb-1">
-              HIỆN VẬT G01 · TIÊU BIỂU
-            </span>
-            <span className="font-display text-base font-normal block leading-tight">
-              Áo tứ thân &amp; Yếm đào
-            </span>
-            <span className="font-mono text-[10px] text-[#2C2A26]/70 block mt-2 border-t border-[#2C2A26]/15 pt-2">
-              Daderot, Bảo tàng Dân tộc học Việt Nam, CC0
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* PHÒNG 2: GIAN TRẦM TƯ (Vấn đề & Tờ tư liệu ghim tường Hải Phòng 1904)       */}
-      {/* ========================================================================= */}
-      <section
-        id="phong-2"
-        className="museum-room relative w-full min-h-[90svh] py-16 md:py-24 px-8 sm:px-12 md:px-16 lg:px-20 bg-[#F2EDE3] border-b border-[#2C2A26]/12 flex flex-col md:flex-row items-center justify-between gap-12"
-      >
-        <div className="room-text max-w-2xl flex flex-col gap-6">
-          <span className="font-mono text-xs uppercase tracking-widest text-[#A8322A]">
-            GIAN THỨ HAI · TRẦM TƯ
-          </span>
-
-          <h2 className="font-display text-3xl sm:text-5xl lg:text-6xl font-light text-[#2C2A26] tracking-tight leading-[1.12]">
-            Ta không thiếu áo đẹp.
-            <br />
-            Ta thiếu người biết mặc nó.
-          </h2>
-
-          <p className="font-sans text-base sm:text-lg md:text-xl text-[#2C2A26]/75 leading-relaxed max-w-xl">
-            Nhiều người trẻ khao khát khoác lên mình tà áo cha ông, nhưng ngập ngừng vì sợ sai điển chế và lúng túng khi gọi tên từng nếp áo.
-          </p>
-
-          <p className="font-sans text-sm sm:text-base text-[#2C2A26]/60 leading-relaxed max-w-lg">
-            Một nếp áo không chỉ là tấm vải cắt may, mà chứa đựng tư thế đứng, cách đi, hoàn cảnh gặp gỡ và câu chuyện của từng thời đại.
-          </p>
-        </div>
-
-        {/* Tờ tư liệu lịch sử ghim tường: đúng kích thước gốc 360 x 450, xoay nhẹ */}
-        <div className="room-visual shrink-0 self-center md:self-end">
-          <div
-            className="to-tu-lieu anh-tu-lieu cursor-default shadow-md"
-            style={{
-              width: '380px',
-              maxWidth: '100%',
-              transform: 'rotate(-2deg)',
-            }}
-          >
-            <div className="w-full overflow-hidden bg-[#E7DFC9]">
-              <img
-                src="/anh/tl-hai-phong-1904.jpg"
-                alt="Bưu thiếp hai phụ nữ mặc áo ngũ thân, Hải Phòng 1904"
-                width={360}
-                height={450}
-                className="w-[360px] max-w-full h-auto block"
-                style={{
-                  aspectRatio: '360 / 450',
-                  objectFit: 'contain',
-                }}
-              />
-            </div>
-            <p className="font-mono text-[10px] text-[#2C2A26] pt-2.5 pb-0.5 leading-snug tracking-normal">
-              Hải Phòng, 1904 · Pierre Dieulefils, 1904, Phạm vi công cộng
-            </p>
-          </div>
-        </div>
-      </section>
+      {/* PHÒNG 2: VẤN ĐỀ */}
+      <PhongVanDe />
 
       {/* ========================================================================= */}
       {/* PHÒNG 3: BỐN GIAN DANH XƯNG (Tứ thân · Ngũ thân · Bà ba · Nhật Bình)        */}
@@ -307,13 +174,14 @@ export default function Landing() {
                 <img
                   src="/anh/tl-tu-than-bt.jpg"
                   alt="Hiện vật áo tứ thân tại Bảo tàng Dân tộc học Việt Nam"
-                  className="w-full h-full object-cover object-top hover:scale-[1.02] transition-transform duration-500"
+                  className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-500"
+                  style={{ objectPosition: '50% 72%' }}
                 />
               </div>
 
               <div className="flex items-center justify-between gap-2 border-b border-[#2C2A26]/15 pb-2 mb-3">
                 <span className="font-mono text-xs font-semibold text-[#A8322A] uppercase">
-                  HIỆN VẬT G01
+                  HIỆN VẬT
                 </span>
                 <span className="font-mono text-xs text-[#2C2A26]/60">
                   THẾ KỶ 11 – 20 · BẮC BỘ
@@ -367,7 +235,7 @@ export default function Landing() {
 
               <div className="flex items-center justify-between gap-2 border-b border-[#2C2A26]/15 pb-2 mb-3">
                 <span className="font-mono text-xs font-semibold text-[#A8322A] uppercase">
-                  TƯ LIỆU G04
+                  TƯ LIỆU
                 </span>
                 <span className="font-mono text-xs text-[#2C2A26]/60">
                   TỪ 1744 · TOÀN QUỐC
@@ -404,13 +272,14 @@ export default function Landing() {
                 <img
                   src="/anh/tl-ba-ba-bt.jpg"
                   alt="Hiện vật áo bà ba đen, khăn rằn trên ma-nơ-canh tại Bảo tàng Phụ nữ Việt Nam"
-                  className="w-full h-full object-cover object-top hover:scale-[1.02] transition-transform duration-500"
+                  className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-500"
+                  style={{ objectPosition: '50% 42%' }}
                 />
               </div>
 
               <div className="flex items-center justify-between gap-2 border-b border-[#2C2A26]/15 pb-2 mb-3">
                 <span className="font-mono text-xs font-semibold text-[#A8322A] uppercase">
-                  HIỆN VẬT G09
+                  HIỆN VẬT
                 </span>
                 <span className="font-mono text-xs text-[#2C2A26]/60">
                   THẾ KỶ 19 – NAY · NAM BỘ
@@ -448,7 +317,7 @@ export default function Landing() {
                   ĐIỂN CHẾ PHẨM PHỤC HOÀNG GIA
                 </span>
                 <span className="font-mono text-xs text-[#F2EDE3]/80">
-                  HIỆN VẬT G06
+                  HIỆN VẬT
                 </span>
               </div>
 
@@ -490,196 +359,13 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ========================================================================= */}
-      {/* PHÒNG 4: GIAN ĐỊA DƯ (Phòng tối chàm duy nhất cho bản đồ và các miền)       */}
-      {/* ========================================================================= */}
-      <section
-        id="phong-4"
-        className="museum-room relative w-full py-16 md:py-24 px-8 sm:px-12 md:px-16 lg:px-20 bg-[#16243A] text-[#F2EDE3] border-b border-[#F2EDE3]/15 select-none"
-      >
-        <div className="room-text max-w-3xl mb-12">
-          <span className="font-mono text-xs uppercase tracking-widest text-[#C39A27]">
-            GIAN THỨ TƯ · ĐỊA DƯ &amp; VÙNG MIỀN
-          </span>
-          <h2 className="font-display text-3xl sm:text-5xl lg:text-6xl font-light text-[#F2EDE3] tracking-tight mt-2 leading-[1.08]">
-            Đất non sông, nếp áo từng miền.
-          </h2>
-          <p className="font-sans text-base sm:text-lg text-[#F2EDE3]/75 mt-4 leading-relaxed">
-            Từ xứ Bắc hào hoa, đất Thần Kinh mẫu mực đến phương Nam phóng khoáng. Bấm vào bản đồ để ngắm nhìn từng hiện vật trang phục gắn liền với địa dư xứ sở.
-          </p>
-        </div>
-
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
-          {/* Cột trái: Bản đồ chuẩn xác từ Natural Earth */}
-          <div className="room-visual w-full lg:w-[48%] flex items-center justify-center p-2 text-[#F2EDE3]">
-            <BanDoVietNam
-              vungDangChon={selectedIsland || selectedRegionId}
-              onChonVung={(vung) => {
-                if (vung === 'HOANG_SA' || vung === 'TRUONG_SA') {
-                  setSelectedIsland(vung as 'HOANG_SA' | 'TRUONG_SA');
-                } else {
-                  setSelectedRegionId(vung);
-                  setSelectedIsland(null);
-                }
-              }}
-              kichThuoc="lon"
-              hienNhanDao={true}
-            />
-          </div>
-
-          {/* Cột phải: Thông tin vùng và danh sách nếp áo */}
-          <div className="w-full lg:w-[48%] flex flex-col gap-6">
-            {/* Bộ nút chọn nhanh */}
-            <div className="flex flex-wrap items-center gap-2 pb-3 border-b border-[#F2EDE3]/15">
-              {REGIONS.map((r) => (
-                <button
-                  key={r.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedRegionId(r.id);
-                    setSelectedIsland(null);
-                  }}
-                  className={`px-3 py-1.5 font-mono text-xs uppercase tracking-wider border transition-colors cursor-pointer ${
-                    !selectedIsland && selectedRegionId === r.id
-                      ? 'border-[#C39A27] bg-[#C39A27]/20 text-[#C39A27] font-bold'
-                      : 'border-[#F2EDE3]/20 bg-transparent text-[#F2EDE3]/70 hover:text-[#F2EDE3]'
-                  }`}
-                >
-                  {r.ten.split(' ')[0]}
-                </button>
-              ))}
-
-              <button
-                type="button"
-                onClick={() => setSelectedIsland(selectedIsland === 'HOANG_SA' ? null : 'HOANG_SA')}
-                className={`px-3 py-1.5 font-mono text-xs uppercase tracking-wider border transition-colors cursor-pointer ${
-                  selectedIsland === 'HOANG_SA'
-                    ? 'border-[#A8322A] bg-[#A8322A]/25 text-[#F2EDE3] font-bold'
-                    : 'border-[#F2EDE3]/20 bg-transparent text-[#C39A27] hover:border-[#C39A27]'
-                }`}
-              >
-                HOÀNG SA
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedIsland(selectedIsland === 'TRUONG_SA' ? null : 'TRUONG_SA')}
-                className={`px-3 py-1.5 font-mono text-xs uppercase tracking-wider border transition-colors cursor-pointer ${
-                  selectedIsland === 'TRUONG_SA'
-                    ? 'border-[#A8322A] bg-[#A8322A]/25 text-[#F2EDE3] font-bold'
-                    : 'border-[#F2EDE3]/20 bg-transparent text-[#C39A27] hover:border-[#C39A27]'
-                }`}
-              >
-                TRƯỜNG SA
-              </button>
-            </div>
-
-            {/* Chi tiết vùng hoặc đảo */}
-            {currentIslandData ? (
-              <div className="border border-[#A8322A] bg-[#0D1826]/90 p-6 corner-mark flex flex-col gap-4 animate-in fade-in duration-200">
-                <span className="font-mono text-xs text-[#A8322A] font-bold uppercase tracking-wider">
-                  BIỂN ĐẢO QUÊ HƯƠNG · CHỦ QUYỀN TOÀN VẸN
-                </span>
-                <h3 className="font-display text-2xl md:text-3xl font-light text-[#F2EDE3]">
-                  {currentIslandData.ten}
-                </h3>
-                <p className="font-mono text-xs text-[#C39A27]">
-                  {currentIslandData.donViHanhChinh} · {currentIslandData.phanVungVanHoa}
-                </p>
-                <p className="font-sans text-sm text-[#F2EDE3]/85 leading-relaxed">
-                  {currentIslandData.moTa}
-                </p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4">
-                <div>
-                  <h3 className="font-display text-2xl md:text-3xl font-light text-[#F2EDE3]">
-                    {currentRegionData.ten}
-                  </h3>
-                  <p className="font-mono text-xs text-[#C39A27] mt-1">
-                    {currentRegionData.khongGianVanHoa}
-                  </p>
-                  <p className="font-sans text-sm text-[#F2EDE3]/75 mt-2 leading-relaxed">
-                    {currentRegionData.dacTrung}
-                  </p>
-                </div>
-
-                {/* Danh sách hiện vật tiêu biểu của vùng */}
-                <div className="border border-[#F2EDE3]/15 bg-[#0D1826]/60 p-4 corner-mark">
-                  <span className="font-mono text-[11px] text-[#C39A27] uppercase tracking-wider block mb-3">
-                    CÁC HIỆN VẬT TIÊU BIỂU ({regionGarments.length} MÓN)
-                  </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {regionGarments.map((g) => (
-                      <div
-                        key={g.id}
-                        onClick={() => setSelectedGarment(g)}
-                        className="p-3 border border-[#F2EDE3]/10 bg-[#16243A]/80 hover:border-[#C39A27] transition-colors cursor-pointer corner-mark flex flex-col justify-between"
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-mono text-[10px] text-[#C39A27]">{g.id}</span>
-                          <span className="font-mono text-[9px] text-[#F2EDE3]/50">
-                            Mức {g.mucTrangTrong}/5
-                          </span>
-                        </div>
-                        <span className="font-display text-sm text-[#F2EDE3] font-medium">
-                          {g.ten}
-                        </span>
-                        <span className="font-mono text-[10px] text-[#F2EDE3]/60 mt-1 line-clamp-1">
-                          {g.nienDai}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
+      {/* PHÒNG 4: GIAN ĐỊA DƯ */}
+      <GianDiaDu onChonHienVat={setSelectedGarment} />
 
       {/* ========================================================================= */}
       {/* PHÒNG 5: PHÒNG THỰC HÀNH TƯƠNG TÁC (Culture Guard & Cam kết văn hóa)        */}
       {/* ========================================================================= */}
-      <section
-        id="phong-5"
-        className="museum-room relative w-full py-16 md:py-24 px-8 sm:px-12 md:px-16 lg:px-20 bg-[#FBF8F2] border-b border-[#2C2A26]/12"
-      >
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
-          {/* Lời cam kết văn hóa */}
-          <div className="room-text w-full lg:w-[44%] flex flex-col gap-6">
-            <span className="font-mono text-xs uppercase tracking-widest text-[#A8322A]">
-              GIAN THỨ NĂM · BÀN THỰC HÀNH &amp; CAM KẾT
-            </span>
-
-            <h2 className="font-display text-3xl sm:text-5xl font-light text-[#2C2A26] tracking-tight leading-[1.08]">
-              Chúng tôi không phán ai mặc sai.
-            </h2>
-
-            <p className="font-display text-xl sm:text-2xl text-[#2C2A26]/80 font-normal leading-relaxed">
-              Có nguồn · Có mức độ · Có lối sửa.
-            </p>
-
-            <p className="font-sans text-sm sm:text-base text-[#2C2A26]/75 leading-relaxed">
-              Khi bạn muốn thử nghiệm một bộ đồ mới, Culture Guard đối chiếu sự hài hòa văn hóa theo ba mức (Đỏ · Vàng · Xanh) và cung cấp nút sửa tức thì để trang phục vừa giữ trọn vẻ đẹp cổ điển, vừa văn minh và phù hợp đời sống.
-            </p>
-
-            {/* Dải thông số cam kết */}
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-6 border-t border-[#2C2A26]/15 font-mono text-xs text-[#A8322A] font-semibold tracking-wider uppercase">
-              <span>{SO_HIEN_VAT} HIỆN VẬT TIÊU BIỂU</span>
-              <span className="opacity-40 font-normal text-[#2C2A26]">·</span>
-              <span>{SO_LUAT} QUY CHUẨN ĐIỂN CHẾ</span>
-              <span className="opacity-40 font-normal text-[#2C2A26]">·</span>
-              <span>{SO_NGUON} NGUỒN TƯ LIỆU ĐỐI CHIẾU</span>
-            </div>
-          </div>
-
-          {/* Bàn thực hành tương tác Culture Guard */}
-          <div className="room-visual w-full lg:w-[52%] flex justify-center">
-            <CultureGuardDemo onExploreRules={() => store.setScreen('culture_rules')} />
-          </div>
-        </div>
-      </section>
+      <PhongThucHanh />
 
       {/* ========================================================================= */}
       {/* PHÒNG 6: LỐI RA BẢO TÀNG (Hỏi đáp & Lời mời bước vào Xưởng phối)             */}
@@ -786,11 +472,8 @@ export default function Landing() {
               <div className="flex items-start justify-between border-b border-[#2C2A26]/15 pb-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-[#A8322A] font-semibold">
-                      {selectedGarment.id}
-                    </span>
                     <span className="font-mono text-xs text-[#2C2A26]/60">
-                      {selectedGarment.vung.join(', ').toUpperCase()}
+                      {selectedGarment.vung.map((v) => TEN_VUNG[v] ?? v).join(' · ')}
                     </span>
                   </div>
                   <h3 className="font-display text-2xl md:text-3xl text-[#2C2A26] mt-1 font-normal">

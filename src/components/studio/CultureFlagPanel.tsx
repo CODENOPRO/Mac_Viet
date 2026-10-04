@@ -26,7 +26,8 @@ export default function CultureFlagPanel({
       lookState,
       selectedEvent,
       contextSetup.phongCach,
-      contextSetup.regionId
+      contextSetup.regionId,
+      contextSetup.nguoiMac
     );
 
   const topRuleItem = flag.luatViPham[0];

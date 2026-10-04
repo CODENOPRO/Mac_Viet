@@ -1,150 +1,312 @@
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { gsap } from '../../lib/gsap';
-import { IMAGES } from '../../data/images';
+import { TRADITIONAL_COLORS } from '../../data/palettes';
+
+// Màn chờ: một khung cửi trên tường phòng trưng bày.
+// Sợi dọc căng sẵn, con thoi chạy qua lại, mỗi lượt để lại một sợi ngang màu truyền thống.
+// Tấm vải được dệt đúng ở chỗ khung hiện vật của tiền sảnh. Dệt xong, tường lui đi,
+// tấm vải được kéo lên và chiếc áo thật lộ ra bên dưới.
 
 interface PreloaderProps {
   onComplete: () => void;
 }
 
-export default function Preloader({ onComplete }: PreloaderProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const progressBarRef = useRef<HTMLDivElement>(null);
-  const [progress, setProgress] = useState(0);
+const SO_COT = 24; // sợi dọc
+const SO_HANG = 32; // sợi ngang, tỉ lệ 3:4 khớp khung hiện vật
+const O = 10; // cỡ một ô dệt trong hệ toạ độ svg
+const ANH_TIEN_SANH = '/anh/tl-tu-than-bt.jpg';
+const SU_KIEN_MO_MAN = 'macviet:mo-man';
 
-  useEffect(() => {
-    // Nếu người dùng bật prefers-reduced-motion: bỏ preloader, hoàn thành ngay
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    if (mediaQuery.matches) {
+const MAU_SOI_DOC = '#E4D6BA';
+
+// Khổ vải sọc: nền chàm, điểm nâu non, yếm đào, hoàng, điều. Tên màu lấy từ dữ liệu.
+const KHO_VAI: [string, number][] = [
+  ['Chàm', 3], ['Nâu non', 2], ['Chàm', 2], ['Yếm đào', 1], ['Chàm', 3], ['Hoàng', 1],
+  ['Chàm', 2], ['Nâu non', 3], ['Điều', 1], ['Chàm', 3], ['Yếm đào', 1], ['Chàm', 2],
+  ['Hoàng', 1], ['Nâu non', 2], ['Chàm', 3], ['Điều', 2],
+];
+
+const mauTheoTen = (ten: string) =>
+  TRADITIONAL_COLORS.find((c) => c.ten === ten) ?? { ten, hex: '#16243A' };
+
+interface KhungDet {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+// Đo khung hiện vật của tiền sảnh để dệt đúng chỗ. Không thấy thì đặt giữa màn.
+const doKhung = (): KhungDet => {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const el = document.querySelector('.hs-khung');
+  if (el) {
+    const r = el.getBoundingClientRect();
+    if (r.width > 40 && r.top < vh && r.bottom > 0) {
+      return { left: r.left, top: r.top, width: r.width, height: r.height };
+    }
+  }
+  const width = Math.min(vw * 0.6, vh * 0.5, 420);
+  const height = (width * 4) / 3;
+  return { left: (vw - width) / 2, top: (vh - height) / 2, width, height };
+};
+
+export default function Preloader({ onComplete }: PreloaderProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [khung, setKhung] = useState<KhungDet | null>(null);
+  const [hang, setHang] = useState(0);
+
+  // Trải khổ vải thành từng sợi ngang
+  const soiNgang = useMemo(() => {
+    const ds: { ten: string; hex: string }[] = [];
+    let i = 0;
+    while (ds.length < SO_HANG) {
+      const [ten, so] = KHO_VAI[i % KHO_VAI.length];
+      const mau = mauTheoTen(ten);
+      for (let k = 0; k < so && ds.length < SO_HANG; k++) ds.push({ ten: mau.ten, hex: mau.hex });
+      i++;
+    }
+    // Dệt từ dưới lên, như trên khung cửi thật
+    return ds;
+  }, []);
+
+  useLayoutEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       onComplete();
       return;
     }
+    setKhung(doKhung());
+    const onResize = () => setKhung(doKhung());
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    const startTime = performance.now();
-    let isFontsLoaded = false;
-    let isHeroImageLoaded = false;
-    let isExiting = false;
+  const daDoKhung = khung !== null;
 
-    // 1. Kiểm tra fonts sẵn sàng
-    if (document.fonts) {
-      document.fonts.ready
-        .then(() => {
-          isFontsLoaded = true;
-        })
-        .catch(() => {
-          isFontsLoaded = true;
-        });
-    } else {
-      isFontsLoaded = true;
-    }
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root || !daDoKhung) return;
 
-    // 2. Tải trước ảnh Hero
+    let fontXong = false;
+    let anhXong = false;
+    const batDau = performance.now();
+    (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => (fontXong = true), () => (fontXong = true));
     const img = new Image();
-    img.src = IMAGES.heroChamAo;
-    img.onload = () => {
-      isHeroImageLoaded = true;
-    };
-    img.onerror = () => {
-      isHeroImageLoaded = true;
-    };
+    img.onload = img.onerror = () => (anhXong = true);
+    img.src = ANH_TIEN_SANH;
 
-    // 3. Tiến trình đếm từ 0 đến 100 trong tối thiểu 1400ms
-    const interval = setInterval(() => {
-      if (isExiting) return;
+    const ctx = gsap.context(() => {
+      const hangEls = gsap.utils.toArray<SVGGElement>('.pl-hang');
+      const thoi = root.querySelector<SVGGElement>('.pl-thoi');
 
-      const elapsed = performance.now() - startTime;
-      const currentProgress = Math.min(100, Math.floor((elapsed / 1400) * 100));
-      setProgress(currentProgress);
+      gsap.set('.pl-chu', { y: 16, opacity: 0 });
+      gsap.set('.pl-vien, .pl-thuoc', { opacity: 0 });
+      gsap.set('.pl-soi-doc', { svgOrigin: '0 0', smoothOrigin: false, scaleY: 0 });
 
-      if (progressBarRef.current) {
-        progressBarRef.current.style.width = `${currentProgress}%`;
-      }
+      const tl = gsap.timeline({ defaults: { ease: 'power2.inOut' } });
 
-      // Đạt tối thiểu 1400ms VÀ fonts đã sẵn sàng VÀ ảnh hero đã load (hoặc timeout 2500ms dự phòng)
-      const isReadyToExit =
-        (elapsed >= 1400 && isFontsLoaded && isHeroImageLoaded) || elapsed >= 2500;
+      // Căng sợi dọc, chữ hiện lên
+      tl.to('.pl-soi-doc', { scaleY: 1, duration: 0.5, stagger: { each: 0.012, from: 'center' }, ease: 'power3.out' })
+        .to('.pl-chu', { y: 0, opacity: 1, duration: 0.6, stagger: 0.08, ease: 'power3.out' }, 0.1)
+        .to('.pl-vien, .pl-thuoc', { opacity: 1, duration: 0.6 }, 0.1);
 
-      if (isReadyToExit && !isExiting) {
-        isExiting = true;
-        clearInterval(interval);
-        setProgress(100);
-
-        // Hiệu ứng trượt lên bằng clip-path trong 900ms ease power4.inOut
-        if (containerRef.current) {
-          gsap.to(containerRef.current, {
-            clipPath: 'inset(0 0 100% 0)',
-            duration: 0.9,
-            ease: 'power4.inOut',
-            onComplete: () => {
-              onComplete();
-            },
-          });
-        } else {
-          onComplete();
+      // Con thoi chạy, mỗi lượt đổi chiều, để lại một sợi ngang
+      const nhip = 0.055;
+      hangEls.forEach((el, i) => {
+        const sangPhai = i % 2 === 0;
+        const y = (SO_HANG - 1 - i) * O + O / 2;
+        const at = 0.35 + i * nhip;
+        // svgOrigin tính bằng toạ độ svg; transformOrigin phần trăm bị lệch khi svg co giãn không giữ tỉ lệ
+        gsap.set(el, { svgOrigin: `${sangPhai ? 0 : SO_COT * O} ${y}`, smoothOrigin: false, scaleX: 0 });
+        tl.to(el, { scaleX: 1, duration: nhip * 1.6, ease: 'power1.out' }, at);
+        if (thoi) {
+          tl.fromTo(
+            thoi,
+            { x: sangPhai ? -O : SO_COT * O + O, y },
+            { x: sangPhai ? SO_COT * O + O : -O, y, duration: nhip * 1.6, ease: 'power1.out' },
+            at
+          );
         }
-      }
-    }, 20);
+        tl.call(() => setHang(i + 1), [], at);
+      });
+      if (thoi) tl.to(thoi, { opacity: 0, duration: 0.2 });
+
+      // Chờ font và ảnh tiền sảnh, tối đa thêm 1.2 giây
+      tl.add(() => {
+        tl.pause();
+        const cho = () => {
+          if ((fontXong && anhXong) || performance.now() - batDau > 4200) {
+            tl.play();
+          } else {
+            requestAnimationFrame(cho);
+          }
+        };
+        cho();
+      });
+
+      // Tường lui đi, chỉ còn tấm vải trên khung
+      tl.to('.pl-chu', { y: -12, opacity: 0, duration: 0.4, stagger: 0.04, ease: 'power2.in' }, '+=0.15');
+      tl.to('.pl-tuong, .pl-thuoc', { opacity: 0, duration: 0.5, ease: 'power1.inOut' }, '<0.15');
+
+      // Báo tiền sảnh mở màn. Hiện vật lộ dần từ dưới lên trong 1.3 giây sau 0.15 giây,
+      // tấm vải được kéo lên cùng nhịp để mép vải trùng mép ảnh.
+      tl.add(() => {
+        root.style.pointerEvents = 'none';
+        window.dispatchEvent(new Event(SU_KIEN_MO_MAN));
+      });
+      tl.to('.pl-vai', { clipPath: 'inset(0% -8% 100% -8%)', duration: 1.3, ease: 'power4.inOut' }, '>0.15');
+      tl.set('.pl-vien', { opacity: 0 });
+      tl.add(() => onComplete());
+    }, root);
 
     return () => {
-      clearInterval(interval);
+      img.onload = img.onerror = null;
+      ctx.revert();
     };
-  }, [onComplete]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [daDoKhung]);
+
+  const soiDangDet = soiNgang[Math.max(0, hang - 1)];
 
   return (
     <div
-      ref={containerRef}
+      ref={rootRef}
       role="progressbar"
-      aria-valuenow={progress}
+      aria-label="Đang tải Mặc Việt"
       aria-valuemin={0}
-      aria-valuemax={100}
-      className="fixed inset-0 z-[var(--z-preloader)] bg-[#0D1826] text-[#F2EDE3] flex flex-col justify-between p-8 md:p-14 select-none pointer-events-auto"
-      style={{
-        clipPath: 'inset(0 0 0 0)',
-      }}
+      aria-valuemax={SO_HANG}
+      aria-valuenow={hang}
+      className="fixed inset-0 z-[var(--z-preloader)] select-none text-[#2C2A26]"
     >
-      {/* 4 dấu ngoặc góc camera HUD cố định */}
-      <div className="absolute top-6 left-6 w-3 h-3 border-t border-l border-[#C39A27]/60 pointer-events-none" />
-      <div className="absolute top-6 right-6 w-3 h-3 border-t border-r border-[#C39A27]/60 pointer-events-none" />
-      <div className="absolute bottom-6 left-6 w-3 h-3 border-b border-l border-[#C39A27]/60 pointer-events-none" />
-      <div className="absolute bottom-6 right-6 w-3 h-3 border-b border-r border-[#C39A27]/60 pointer-events-none" />
+      {/* Tường phòng trưng bày, cùng màu tường tiền sảnh để lúc lui đi không thấy mối nối */}
+      <div className="pl-tuong absolute inset-0 bg-[#F2EDE3]">
+        <div
+          aria-hidden="true"
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse 38% 62% at 50% 8%, rgba(255,253,247,0.9) 0%, rgba(255,253,247,0) 75%)',
+          }}
+        />
 
-      {/* Góc trên: Micro-label */}
-      <div className="flex items-center justify-between w-full">
-        <span className="font-mono text-xs text-[#C39A27] uppercase tracking-widest">MAC VIET</span>
-        <span className="font-mono text-[10px] text-[#F2EDE3]/50 uppercase tracking-wider">
-          KHOI TAO DU LIEU 2026
-        </span>
+        <div className="pl-chu absolute top-0 inset-x-0 h-[72px] flex items-center px-5 sm:px-10 lg:px-14">
+          <span className="font-mono text-xs font-semibold tracking-[0.22em] text-[#A8322A]">MẶC VIỆT</span>
+          <span className="hidden sm:inline font-sans text-[13px] text-[#2C2A26]/70 ml-3">
+            Phòng trưng bày trang phục Việt
+          </span>
+        </div>
+
+        <div className="absolute inset-x-0 bottom-0 px-5 sm:px-10 lg:px-14 pb-8 lg:pb-12 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+          <p className="pl-chu font-display italic font-light text-[26px] lg:text-[clamp(26px,2.3vw,40px)] leading-[1.12] m-0 max-w-[16ch] lg:max-w-[20ch]">
+            Mỗi tấm áo là một lần người Việt tự giới thiệu mình.
+          </p>
+
+          <div className="pl-chu flex items-center gap-3 font-mono text-[11px] text-[#2C2A26]/75 tabular-nums">
+            <span
+              aria-hidden="true"
+              className="block w-3 h-3 border border-[#2C2A26]/20 transition-colors duration-150"
+              style={{ backgroundColor: soiDangDet?.hex ?? 'transparent' }}
+            />
+            <span>
+              Đang dệt sợi {soiDangDet?.ten.toLowerCase() ?? ''}
+            </span>
+            <span className="text-[#2C2A26]/40">·</span>
+            <span>
+              {String(hang).padStart(2, '0')} / {SO_HANG}
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* Khu vực trung tâm: Câu dẫn ý niệm */}
-      <div className="max-w-xl">
-        <span className="font-mono text-[10px] text-[#C39A27] uppercase tracking-widest block mb-2">
-          Y PHUC DI SAN
-        </span>
-        <p className="font-sans text-sm md:text-base text-[#F2EDE3]/75 leading-relaxed">
-          Mỗi tấm áo là một lần người Việt tự giới thiệu mình. Tỉ mỉ từng lớp dệt, chuẩn mực từng quy thức điển chế.
-        </p>
-      </div>
-
-      {/* Đáy màn: Chữ "ĐANG DỆT" bằng Fraunces, số đếm góc phải dưới bằng JetBrains Mono, đường kẻ tóc ngang */}
-      <div className="w-full flex flex-col gap-4">
-        {/* Đường kẻ tóc chạy ngang theo tiến trình */}
-        <div className="w-full h-[1px] bg-[#F2EDE3]/15 relative overflow-hidden">
+      {/* Tấm vải trên khung cửi, đặt trùng khung hiện vật */}
+      {khung && (
+        <div
+          className="absolute"
+          style={{ left: khung.left, top: khung.top, width: khung.width, height: khung.height }}
+        >
+          {/* Thước đo hàng dệt dọc mép phải khung, vạch sáng dần theo tiến độ */}
           <div
-            ref={progressBarRef}
-            className="absolute top-0 left-0 bottom-0 bg-[#C39A27]"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+            aria-hidden="true"
+            className="pl-thuoc absolute top-0 bottom-0 hidden sm:flex flex-col-reverse justify-between"
+            style={{ left: 'calc(100% + 26px)' }}
+          >
+            {Array.from({ length: SO_HANG / 4 + 1 }, (_, k) => {
+              const moc = k * 4;
+              const daQua = hang >= moc && moc > 0;
+              return (
+                <div key={moc} className="flex items-center gap-2 h-0">
+                  <span
+                    className={`block h-px transition-all duration-300 ${
+                      moc % 8 === 0 ? 'w-3' : 'w-1.5'
+                    } ${daQua ? 'bg-[#A8322A]' : 'bg-[#2C2A26]/30'}`}
+                  />
+                  {moc % 8 === 0 && moc > 0 && (
+                    <span
+                      className={`font-mono text-[10px] tabular-nums transition-colors duration-300 ${
+                        daQua ? 'text-[#2C2A26]' : 'text-[#2C2A26]/40'
+                      }`}
+                    >
+                      {String(moc).padStart(2, '0')}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <div className="pl-vien absolute inset-0 outline outline-1 outline-[#C39A27]/70 outline-offset-[10px] pointer-events-none" />
+          <svg
+            className="pl-vai absolute inset-0 w-full h-full overflow-visible"
+            viewBox={`0 0 ${SO_COT * O} ${SO_HANG * O}`}
+            preserveAspectRatio="none"
+            aria-hidden="true"
+            style={{ clipPath: 'inset(0% -8% 0% -8%)' }}
+          >
+            {/* Sợi dọc căng sẵn */}
+            {Array.from({ length: SO_COT }, (_, c) => (
+              <rect
+                key={`d${c}`}
+                className="pl-soi-doc"
+                x={c * O + 2}
+                y={0}
+                width={O - 4}
+                height={SO_HANG * O}
+                fill={MAU_SOI_DOC}
+              />
+            ))}
 
-        <div className="flex items-baseline justify-between">
-          <span className="font-display text-4xl md:text-7xl font-light text-[#F2EDE3] tracking-tight">
-            ĐANG DỆT
-          </span>
-          <span className="font-mono text-3xl md:text-5xl text-[#C39A27] tabular-nums font-normal">
-            {progress.toString().padStart(2, '0')}%
-          </span>
+            {/* Sợi ngang: một dải màu, sợi dọc nổi lên ở các ô xen kẽ (kiểu dệt trơn) */}
+            {soiNgang.map((s, i) => {
+              const r = SO_HANG - 1 - i;
+              return (
+                <g key={`n${i}`} className="pl-hang">
+                  <rect x={0} y={r * O + 0.6} width={SO_COT * O} height={O - 1.2} fill={s.hex} />
+                  {Array.from({ length: SO_COT }, (_, c) =>
+                    (r + c) % 2 === 1 ? (
+                      <rect
+                        key={c}
+                        x={c * O + 2}
+                        y={r * O}
+                        width={O - 4}
+                        height={O}
+                        fill={MAU_SOI_DOC}
+                        fillOpacity={0.92}
+                      />
+                    ) : null
+                  )}
+                </g>
+              );
+            })}
+
+            {/* Con thoi */}
+            <g className="pl-thoi">
+              <path d="M -9 0 L -5 -3 L 5 -3 L 9 0 L 5 3 L -5 3 Z" fill="#6E5439" />
+              <rect x={-3} y={-0.6} width={6} height={1.2} fill="#F2EDE3" />
+            </g>
+          </svg>
         </div>
-      </div>
+      )}
     </div>
   );
 }

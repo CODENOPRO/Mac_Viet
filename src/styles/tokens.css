@@ -170,3 +170,10 @@ h1, h2, h3, .font-display {
   box-shadow: 0 1px 2px rgba(44, 42, 38, 0.12);
   border: 1px solid rgba(44, 42, 38, 0.08);
 }
+
+/* Vùng bấm tối thiểu 44px trên điện thoại, chỉ ở landing */
+@media (max-width: 767px) {
+  [data-landing] button {
+    min-height: 44px;
+  }
+}

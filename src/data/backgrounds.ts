@@ -1,99 +1,95 @@
 import { Background } from '../types';
+import { hexToHsl, tinhKhoangCachHue } from '../lib/colorHarmony';
+
+// Phông studio trơn một màu. Ngoại cảnh do model vẽ trông giả, nên chỉ dùng phông studio.
+const MOI_VUNG = ['R01', 'R02', 'R03', 'R04', 'bac', 'trung', 'nam', 'tay_bac', 'toan_quoc'];
+
+const phong = (hex: string, ten: string): string =>
+  `seamless studio paper backdrop in a single solid ${ten} colour, hex ${hex}, with a gentle darker falloff towards the edges, no props, no furniture, no scenery, no floor texture`;
 
 export const BACKGROUNDS: Background[] = [
   {
     id: 'BG1',
-    ten: 'Sân đình Bắc Bộ',
-    moTaChoAI: 'old brick courtyard of a northern Vietnamese communal house, weathered wooden pillars, mossy tiled roof, soft late afternoon light',
-    hopVoiSuKien: ['E01', 'E04', 'E05', 'E08'],
-    hopVoiVung: ['R01', 'bac', 'toan_quoc']
+    ten: 'Phông đỏ đô trầm',
+    hex: '#6E1E26',
+    moTaChoAI: phong('#6E1E26', 'deep burgundy red'),
+    hopVoiSuKien: ['E01', 'E03', 'E08', 'E02', 'E06', 'E07'],
+    hopVoiVung: MOI_VUNG,
   },
   {
     id: 'BG2',
-    ten: 'Tường vôi nhà cổ',
-    moTaChoAI: 'plain aged ivory lime-washed wall, gently peeling texture, strong side light from a window, very simple background',
-    hopVoiSuKien: ['E02', 'E06', 'E07'],
-    hopVoiVung: ['R01', 'R02', 'R03', 'R04', 'bac', 'trung', 'nam', 'tay_bac', 'toan_quoc']
+    ten: 'Phông chàm sâu',
+    hex: '#1E2A3A',
+    moTaChoAI: phong('#1E2A3A', 'deep indigo'),
+    hopVoiSuKien: ['E01', 'E03', 'E08', 'E05'],
+    hopVoiVung: MOI_VUNG,
   },
   {
     id: 'BG3',
-    ten: 'Hành lang Đại Nội Huế',
-    moTaChoAI: 'corridor of the Hue imperial citadel, deep red lacquered columns, diffused overcast light',
-    hopVoiSuKien: ['E03', 'E05', 'E08'],
-    hopVoiVung: ['R02', 'trung']
+    ten: 'Phông ngà',
+    hex: '#ECE5D8',
+    moTaChoAI: phong('#ECE5D8', 'warm ivory'),
+    hopVoiSuKien: ['E01', 'E02', 'E03', 'E04', 'E05', 'E06', 'E07', 'E08'],
+    hopVoiVung: MOI_VUNG,
   },
   {
     id: 'BG4',
-    ten: 'Nhà cổ Hội An',
-    moTaChoAI: 'Hoi An old town house, ochre yellow wall, dark wooden shutters, blurred lanterns in the background',
-    hopVoiSuKien: ['E01', 'E02', 'E07'],
-    hopVoiVung: ['R02', 'trung']
+    ten: 'Phông nâu trầm',
+    hex: '#4A3A2C',
+    moTaChoAI: phong('#4A3A2C', 'dark earthy brown'),
+    hopVoiSuKien: ['E05', 'E02', 'E06', 'E07'],
+    hopVoiVung: MOI_VUNG,
   },
   {
     id: 'BG5',
-    ten: 'Phố cổ Hà Nội',
-    moTaChoAI: 'narrow Hanoi old quarter street, mossy walls, a blurred bicycle far behind, shallow depth of field',
-    hopVoiSuKien: ['E02', 'E07'],
-    hopVoiVung: ['R01', 'bac']
+    ten: 'Phông lục trầm',
+    hex: '#2F4A40',
+    moTaChoAI: phong('#2F4A40', 'deep muted green'),
+    hopVoiSuKien: ['E04'],
+    hopVoiVung: MOI_VUNG,
   },
   {
     id: 'BG6',
-    ten: 'Bến sông Nam Bộ',
-    moTaChoAI: 'southern Vietnam riverbank, wooden sampan blurred in the distance, nipa palms, early morning light',
-    hopVoiSuKien: ['E01', 'E07', 'E08'],
-    hopVoiVung: ['R03', 'nam']
+    ten: 'Phông xám ấm',
+    hex: '#8C857B',
+    moTaChoAI: phong('#8C857B', 'warm grey'),
+    hopVoiSuKien: ['E04', 'E02', 'E06', 'E07'],
+    hopVoiVung: MOI_VUNG,
   },
-  {
-    id: 'BG7',
-    ten: 'Sân trường',
-    moTaChoAI: 'Vietnamese school yard, stone benches, flame tree, yellow wall, dappled sunlight',
-    hopVoiSuKien: ['E02'],
-    hopVoiVung: ['R01', 'R02', 'R03', 'bac', 'trung', 'nam', 'toan_quoc']
-  },
-  {
-    id: 'BG8',
-    ten: 'Phòng studio trơn',
-    moTaChoAI: 'seamless studio backdrop in ivory or indigo, single soft light source, no props',
-    hopVoiSuKien: ['E02', 'E03', 'E06', 'E08'],
-    hopVoiVung: ['R01', 'R02', 'R03', 'R04', 'bac', 'trung', 'nam', 'tay_bac', 'toan_quoc']
-  }
 ];
 
-export function chonBoiCanhTuDong(suKien?: string, vung?: string): Background {
-  const defaultBg = BACKGROUNDS.find((b) => b.id === 'BG2') || BACKGROUNDS[0];
-  if (!suKien && !vung) {
-    return defaultBg;
-  }
+// Thứ tự ưu tiên phông theo không khí của từng dịp.
+const THU_TU_THEO_DIP: Record<string, string[]> = {
+  E01: ['BG1', 'BG3', 'BG2'], // Tết
+  E03: ['BG1', 'BG3', 'BG2'], // cưới hỏi
+  E08: ['BG1', 'BG2', 'BG3'], // biểu diễn
+  E04: ['BG5', 'BG3', 'BG6'], // lễ chùa
+  E05: ['BG2', 'BG3', 'BG4'], // giỗ, gia tiên
+  E02: ['BG3', 'BG1', 'BG4', 'BG6'], // kỷ yếu
+  E06: ['BG3', 'BG1', 'BG4', 'BG6'], // ra mắt gia đình
+  E07: ['BG3', 'BG1', 'BG4', 'BG6'], // phố cổ
+};
 
-  // Chuẩn hóa mã vùng
-  const normalizedRegion = (vung || '').toLowerCase();
-  const normalizedEvent = (suKien || '').toUpperCase();
+/**
+ * Chọn phông theo dịp, rồi lấy phông đầu tiên hợp với màu áo:
+ * không cùng họ màu với áo, và đủ tương phản để tôn bộ đồ.
+ * vung giữ lại để không phải đổi chỗ gọi; phông studio không phụ thuộc vùng.
+ */
+export function chonBoiCanhTuDong(suKien?: string, vung?: string, mauAoHex?: string): Background {
+  const macDinh = BACKGROUNDS[2];
+  const thuTu = (THU_TU_THEO_DIP[(suKien || '').toUpperCase()] || ['BG3', 'BG1', 'BG2'])
+    .map((id) => BACKGROUNDS.find((b) => b.id === id))
+    .filter((b): b is Background => !!b);
+  if (!mauAoHex) return thuTu[0] || macDinh;
 
-  // 1. Tìm bối cảnh khớp cả sự kiện lẫn vùng miền
-  const exactMatch = BACKGROUNDS.find((b) => {
-    const matchEvent = b.hopVoiSuKien.includes(normalizedEvent);
-    const matchRegion = b.hopVoiVung.some((r) => r.toLowerCase() === normalizedRegion);
-    return matchEvent && matchRegion;
-  });
-
-  if (exactMatch) {
-    return exactMatch;
-  }
-
-  // 2. Tìm bối cảnh khớp sự kiện trước
-  const eventMatch = BACKGROUNDS.find((b) => b.hopVoiSuKien.includes(normalizedEvent));
-  if (eventMatch) {
-    return eventMatch;
-  }
-
-  // 3. Tìm bối cảnh khớp vùng miền
-  const regionMatch = BACKGROUNDS.find((b) =>
-    b.hopVoiVung.some((r) => r.toLowerCase() === normalizedRegion)
-  );
-  if (regionMatch) {
-    return regionMatch;
-  }
-
-  // 4. Mặc định về BG2: Tường vôi nhà cổ
-  return defaultBg;
+  const ao = hexToHsl(mauAoHex);
+  const hop = (b: Background) => {
+    const p = hexToHsl(b.hex || '#ECE5D8');
+    // Phông rất sáng hoặc rất tối đọc như trung tính, dù độ bão hoà HSL có thể cao.
+    const phongTrungTinh = p.s < 15 || p.l > 80 || p.l < 20;
+    const cungHoMau = !phongTrungTinh && ao.s >= 20 && tinhKhoangCachHue(p.h, ao.h) < 40;
+    const duTuongPhan = Math.abs(p.l - ao.l) >= 20 || (ao.s < 20 && p.s > 40);
+    return !cungHoMau && duTuongPhan;
+  };
+  return thuTu.find(hop) || macDinh;
 }

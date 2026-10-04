@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { SOURCES } from '../../data/sources';
 import { Source } from '../../types';
+import KhoiKiemChung, { nhanCachKiemChung } from './KhoiKiemChung';
 
 interface SourceTagProps {
   id?: string;
@@ -67,19 +68,6 @@ export default function SourceTag({
     }
   };
 
-  const getAccessTypeLabel = (loaiTruyCap?: Source['loaiTruyCap']) => {
-    switch (loaiTruyCap) {
-      case 'truc_tuyen':
-        return 'Truy cập trực tuyến';
-      case 'tu_lieu_in':
-        return 'Tư liệu in ấn';
-      case 'hien_vat_bao_tang':
-        return 'Hiện vật trưng bày';
-      default:
-        return 'Tư liệu tham khảo';
-    }
-  };
-
   return (
     <>
       {/* Một dòng chữ nhỏ, liền mạch như câu văn, bấm được, KHÔNG dùng viên thuốc hay mã nội bộ */}
@@ -99,7 +87,7 @@ export default function SourceTag({
           onClick={() => setIsOpen(false)}
         >
           <div
-            className="w-full max-w-xl max-h-[85vh] overflow-y-auto bg-[#FBF8F2] border border-[#2C2A26] p-5 sm:p-6 shadow-2xl corner-mark relative animate-in zoom-in-95 duration-150"
+            className="w-full max-w-xl max-h-[85vh] overflow-y-auto overflow-x-hidden bg-[#FBF8F2] border border-[#2C2A26] p-5 sm:p-6 shadow-2xl corner-mark relative animate-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header modal */}
@@ -138,7 +126,7 @@ export default function SourceTag({
                     </span>
                     <span className="text-[#2C2A26]/30">·</span>
                     <span className="font-mono text-[10px] text-[#6E5439] uppercase tracking-wider">
-                      {getAccessTypeLabel(source.loaiTruyCap)}
+                      {nhanCachKiemChung(source)}
                     </span>
                   </div>
 
@@ -175,34 +163,7 @@ export default function SourceTag({
                     </p>
                   </div>
 
-                  {/* Ghi chú truy cập */}
-                  <div className="flex flex-col gap-1">
-                    <span className="font-mono text-[10px] text-[#6E5439] uppercase tracking-wider">
-                      THÔNG TIN TRUY CẬP TƯ LIỆU
-                    </span>
-                    <p className="text-xs leading-relaxed text-[#2C2A26] bg-[#FBF8F2] p-2.5 border border-[#2C2A26]/8">
-                      {source.ghiChuTruyCap}
-                    </p>
-                  </div>
-
-                  {/* Nút mở nguồn hoặc thông báo */}
-                  <div className="pt-2 flex items-center justify-between gap-3">
-                    {source.url ? (
-                      <a
-                        href={source.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3 py-1.5 bg-[#A8322A] hover:bg-[#A8322A]/90 text-[#F2EDE3] font-mono text-[11px] uppercase tracking-wider transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                      >
-                        <span>MỞ NGUỒN</span>
-                        <span className="font-mono text-xs">↗</span>
-                      </a>
-                    ) : (
-                      <span className="font-sans text-[11px] text-[#6E5439] leading-snug">
-                        Tư liệu in ấn hoặc hiện vật trưng bày.
-                      </span>
-                    )}
-                  </div>
+                  <KhoiKiemChung source={source} />
                 </div>
               ))}
             </div>

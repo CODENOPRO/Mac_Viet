@@ -2,8 +2,9 @@ import { GoogleGenAI } from '@google/genai';
 import { LookState, EventContext, Background } from '../types';
 import { GARMENTS } from '../data/garments';
 import { TRADITIONAL_COLORS } from '../data/palettes';
-import { DEMO_RESPONSES } from '../data/demoResponses';
 import { recordTryOnUsage } from './tryOnGuard';
+import { store } from './store';
+import { dungBoiCanhAnh, BoiCanhAnh } from './promptDong';
 
 // =============================================================================
 // 1. CẤU HÌNH API KEY VÀ KHỞI TẠO SDK @google/genai
@@ -262,8 +263,10 @@ export async function chuyenDataUrlSangRasterPart(
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = img.width || 480;
-      canvas.height = img.height || 600;
+      const goc = { w: img.width || 480, h: img.height || 600 };
+      const tiLe = Math.min(1, 1024 / Math.max(goc.w, goc.h));
+      canvas.width = Math.round(goc.w * tiLe);
+      canvas.height = Math.round(goc.h * tiLe);
       const ctx = canvas.getContext('2d');
       if (!ctx) {
         return reject(new Error('Khong khoi tao duoc context 2D'));
@@ -290,7 +293,7 @@ export async function chuyenDataUrlSangRasterPart(
 }
 
 /**
- * Đóng dấu "ANH DO AI TAO" vĩnh viễn vào canvas ảnh
+ * Đóng dấu "ẢNH DO AI TẠO" vĩnh viễn vào canvas ảnh
  */
 export async function dongDauAnhAI(dataUrl: string): Promise<string> {
   return new Promise((resolve) => {
@@ -311,7 +314,7 @@ export async function dongDauAnhAI(dataUrl: string): Promise<string> {
       const fontSize = Math.max(12, Math.round(canvas.width * 0.024));
       const padX = Math.round(fontSize * 0.8);
       const padY = Math.round(fontSize * 0.4);
-      const text = 'ANH DO AI TAO';
+      const text = 'ẢNH DO AI TẠO';
 
       ctx.font = `${fontSize}px "JetBrains Mono", monospace`;
       const textWidth = ctx.measureText(text).width;
@@ -342,88 +345,6 @@ export async function dongDauAnhAI(dataUrl: string): Promise<string> {
   });
 }
 
-/**
- * Tao ban ghep minh hoa lop phang du phong (Tang 3)
- */
-export async function taoBanGhepLopPhang(
-  look: LookState,
-  background: Background
-): Promise<string> {
-  return new Promise((resolve) => {
-    if (typeof window === 'undefined') {
-      return resolve(DEMO_RESPONSES.renderLook.imageUrl);
-    }
-    const canvas = document.createElement('canvas');
-    canvas.width = 600;
-    canvas.height = 800;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return resolve(DEMO_RESPONSES.renderLook.imageUrl);
-
-    // Nen giay cu mau nga
-    ctx.fillStyle = '#F2EDE3';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Khung vien thu cong
-    ctx.strokeStyle = '#C39A27';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
-
-    // Thong tin boi canh
-    ctx.font = '12px "JetBrains Mono", monospace';
-    ctx.fillStyle = '#6E5439';
-    ctx.fillText(`BOI CANH: ${background.ten.toUpperCase()}`, 36, 54);
-
-    // Tieu de look
-    ctx.font = '24px "Fraunces", serif';
-    ctx.fillStyle = '#2C2A26';
-    ctx.fillText(look.thuongY?.ten || 'Trang phục cổ truyền', 36, 92);
-
-    // Dựng khối minh họa phom áo
-    const primaryColor = look.mauChinh || '#16243A';
-    ctx.fillStyle = primaryColor;
-    ctx.beginPath();
-    ctx.moveTo(220, 160);
-    ctx.lineTo(380, 160);
-    ctx.lineTo(430, 560);
-    ctx.lineTo(170, 560);
-    ctx.closePath();
-    ctx.fill();
-
-    // Cổ áo viền kim loại
-    ctx.strokeStyle = '#C39A27';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(250, 160);
-    ctx.lineTo(340, 250);
-    ctx.stroke();
-
-    // 5 khuy ngũ thân
-    ctx.fillStyle = '#C39A27';
-    [180, 215, 250, 310, 370].forEach((y, i) => {
-      ctx.beginPath();
-      ctx.arc(340 - i * 4, y, 4, 0, Math.PI * 2);
-      ctx.fill();
-    });
-
-    // Ha y (quan/vay)
-    ctx.fillStyle = '#E8DEC8';
-    ctx.fillRect(200, 560, 90, 160);
-    ctx.fillRect(310, 560, 90, 160);
-
-    // Thu phuc (khan/mu)
-    ctx.fillStyle = '#2C2A26';
-    ctx.beginPath();
-    ctx.ellipse(300, 135, 65, 22, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Nhan minh hoa phang
-    ctx.font = '11px "JetBrains Mono", monospace';
-    ctx.fillStyle = '#6E5439';
-    ctx.fillText('BAN MINH HOA LOP PHANG · DU PHONG TANG 3', 36, 755);
-
-    resolve(canvas.toDataURL('image/jpeg', 0.9));
-  });
-}
 
 // =============================================================================
 // 5. TRẠNG THÁI THEO DÕI LOOK LẦN TRƯỚC (CHO CHẾ ĐỘ ĐỔI NHANH MỘT MÓN)
@@ -517,9 +438,10 @@ async function xayDungPromptVaAnh(
     boiCanh: EventContext;
     background: Background;
     overrideBackgroundDescription?: string;
+    boiCanhAnh?: BoiCanhAnh;
   }
 ): Promise<PromptBuilderResult> {
-  const { anhNguoi, look, background, overrideBackgroundDescription } = opts;
+  const { anhNguoi, look, background, overrideBackgroundDescription, boiCanhAnh } = opts;
 
   // Tim mau tieng Viet
   const mainColorObj = TRADITIONAL_COLORS.find(
@@ -530,7 +452,6 @@ async function xayDungPromptVaAnh(
 
   // Thong tin thuong y
   const thuongYTen = look.thuongY?.ten || 'Áo ngũ thân tay chẽn';
-  const thuongYTenKhongDau = boDauTiengViet(thuongYTen);
   const thuongYChatLieu =
     look.thuongY?.chatLieuPhoBien?.join(', ') || 'lụa tơ tằm, the dệt truyền thống';
 
@@ -560,68 +481,71 @@ async function xayDungPromptVaAnh(
   const personRaster = await chuyenDataUrlSangRasterPart(anhNguoi);
   imageParts.push({ inlineData: personRaster });
 
-  // Anh 2: Thuong y
-  let hasUpperImage = false;
-  const thuongYRef =
-    look.thuongY?.anh ||
-    GARMENTS.find((g) => g.id === look.thuongY?.id)?.anh;
-  if (thuongYRef) {
-    const upperRaster = await chuyenDataUrlSangRasterPart(thuongYRef);
-    imageParts.push({ inlineData: upperRaster });
-    hasUpperImage = true;
-  }
+  // Chỉ gửi ảnh chụp hiện vật thật làm tham chiếu. Hình vẽ minh hoạ khiến model chép theo nét vẽ.
+  const thamChieu = (id?: string) => GARMENTS.find((g) => g.id === id)?.anhThamChieuThat;
+  const moTa = (id?: string) => GARMENTS.find((g) => g.id === id)?.moTaHinhAnh;
+  const ghiChuAnh: string[] = ['Image 1 is the person.'];
 
-  // Anh 3: Thu phuc (neu co)
   let hasHeadwearImage = false;
-  if (look.thuPhuc && imageParts.length < 4) {
-    const thuPhucRef =
-      look.thuPhuc.anh ||
-      GARMENTS.find((g) => g.id === look.thuPhuc?.id)?.anh;
-    if (thuPhucRef) {
-      const headRaster = await chuyenDataUrlSangRasterPart(thuPhucRef);
-      imageParts.push({ inlineData: headRaster });
-      hasHeadwearImage = true;
-    }
-  }
-
-  // Anh 4: Ha y (neu co va con cho)
   let hasLowerImage = false;
-  let lowerImageIndex = 0;
-  if (look.haY && imageParts.length < 4) {
-    const haYRef =
-      look.haY.anh ||
-      GARMENTS.find((g) => g.id === look.haY?.id)?.anh;
-    if (haYRef) {
-      const lowerRaster = await chuyenDataUrlSangRasterPart(haYRef);
-      imageParts.push({ inlineData: lowerRaster });
-      hasLowerImage = true;
-      lowerImageIndex = imageParts.length; // index 1-based trong prompt
-    }
-  }
+  const themThamChieu = async (src: string | undefined, vaiTro: string) => {
+    if (!src || imageParts.length >= 4) return false;
+    imageParts.push({ inlineData: await chuyenDataUrlSangRasterPart(src) });
+    ghiChuAnh.push(`Image ${imageParts.length} is a museum photo of the real ${vaiTro}; follow its construction exactly.`);
+    return true;
+  };
+  await themThamChieu(thamChieu(look.thuongY?.id), 'main garment');
+  hasHeadwearImage = await themThamChieu(thamChieu(look.thuPhuc?.id), 'headwear');
+  hasLowerImage = await themThamChieu(thamChieu(look.haY?.id), 'lower garment');
 
-  // Xay dung chuoi dau Image 1, Image 2...
-  let headerImages = 'Image 1 is the person. Image 2 is the reference garment for the main robe.';
-  if (hasHeadwearImage) {
-    headerImages += ' Image 3 is the reference headwear.';
-  }
-  if (hasLowerImage) {
-    headerImages += ` Image ${lowerImageIndex} is the reference garment for the lower garment.`;
-  }
+  const dong = (nhan: string, ten: string | undefined, id: string | undefined, them = '') =>
+    ten ? `- ${nhan}: ${moTa(id) || ten}.${them}
+` : '';
 
   const promptText =
-    `${headerImages}\n\n` +
-    `Task: dress the person in Image 1 in the traditional Vietnamese outfit described below. Keep Image 1's face, hairline, skin tone, body proportions, pose and camera angle EXACTLY as they are. Do not beautify, do not slim, do not change the face. If multiple people appear, dress only the person closest to the camera and leave the others unchanged.\n\n` +
-    `Outfit:\n` +
-    `- Main robe: ${thuongYTen} (${thuongYTenKhongDau}), color ${tenMauTiengViet} ${hexMau}, fabric ${thuongYChatLieu}. Follow the collar structure, front flap line and button placement shown in Image 2 precisely.\n` +
-    `- Lower garment: ${haYTen}, color ${haYMau}, fabric ${haYChatLieu}.${hasLowerImage ? ` Follow the structure shown in Image ${lowerImageIndex} precisely.` : ''}\n` +
-    `- Headwear: ${thuPhucTen}${hasHeadwearImage ? ', as shown in Image 3.' : `, color ${thuPhucMau}.`}\n\n` +
-    `Background: ${moTaBackground}.\n\n` +
-    `Photographic direction: waist-up to full-body framing matching Image 1, natural light from one side, realistic fabric weight and drape, visible weave texture, shallow depth of field on the background.\n\n` +
-    `Hard constraints:\n` +
-    `- No text, no logo, no watermark, no signature anywhere in the image.\n` +
-    `- Do not add jewelry, patterns or garments that were not listed above.\n` +
-    `- The collar must follow the reference image, not a generic East Asian collar.\n` +
-    `- Keep the outfit consistent with a single historical family; do not mix decorative elements from other cultures.`;
+    `Editorial fashion lookbook photograph of a person wearing traditional Vietnamese clothing, shot in a professional photo studio.
+
+` +
+    `${ghiChuAnh.join(' ')}
+` +
+    `Keep the person in Image 1 recognisably the same individual: same face, hairline, skin tone and body proportions. Do not beautify, do not slim, do not change facial structure. If several people appear, use only the one closest to the camera.
+
+` +
+    `THE OUTFIT, render every item exactly as described:
+` +
+    dong('Main garment', thuongYTen, look.thuongY?.id, ` Colour: ${tenMauTiengViet}, hex ${hexMau}. Fabric: ${boiCanhAnh?.chatLieu || thuongYChatLieu}, with visible weave. Finishing: ${boiCanhAnh?.hoanThien || 'neat, well-pressed'}.`) +
+    dong('Lower garment', look.haY?.ten, look.haY?.id, ` Colour: ${haYMau}. Fabric: ${haYChatLieu}.`) +
+    dong('Headwear', look.thuPhuc?.ten, look.thuPhuc?.id, hasHeadwearImage ? '' : ` Colour: ${thuPhucMau}.`) +
+    dong('Footwear', look.hai?.ten, look.hai?.id) +
+    (boiCanhAnh?.dangMay ? `- Fit: ${boiCanhAnh.dangMay}.
+` : '') +
+    `
+BACKGROUND: ${moTaBackground}.
+
+` +
+    (boiCanhAnh ? `MOOD AND EXPRESSION: ${boiCanhAnh.khongKhi}.
+
+` : '') +
+    `POSE AND FRAMING: full-length portrait, subject centred, ${boiCanhAnh?.dangDung || 'standing upright, feet together, hands clasped in front at the waist, looking at the camera'}. Vertical portrait orientation.
+
+` +
+    `LIGHT: ${boiCanhAnh?.anhSang || 'one large soft key light from the front-left, gentle shadows, low contrast, no harsh flash'}.
+
+` +
+    `STYLE: ${boiCanhAnh ? boiCanhAnh.huongNgheThuat + '; ' : ''}high-end editorial lookbook, natural skin texture, realistic fabric drape and folds, true-to-life colours, sharp focus on the clothing.
+
+` +
+    `STRICT RULES:
+` +
+    `- Only one person in the image.
+` +
+    `- No text, letters, logos, watermarks or signatures anywhere.
+` +
+    `- Do not add jewellery, accessories, patterns or garments that are not listed above.
+` +
+    `- This is Vietnamese clothing. Do not render it as Chinese hanfu, Korean hanbok or Japanese kimono; follow the construction described, not a generic East Asian robe.
+` +
+    `- Colours must match the hex values given.`;
 
   return {
     promptText,
@@ -673,6 +597,10 @@ async function goiGeminiSinhAnh(
 
 // =============================================================================
 // 8. HÀM CHÍNH macThu()
+// Khi không có ảnh thật, macThu trả anh rỗng. Giao diện hiện biển chú thích bộ đồ, không vẽ hình thay thế.
+export const THONG_BAO_CHUA_CO_MAY_DUNG =
+  'Bản chạy này chưa kết nối máy dựng ảnh, nên chưa có ảnh mặc thử. Bộ đồ vẫn được kiểm tra đầy đủ theo luật văn hoá.';
+//
 // =============================================================================
 export async function macThu(opts: {
   anhNguoi: string; // dataURL, da nen san
@@ -684,6 +612,10 @@ export async function macThu(opts: {
 }): Promise<{ anh: string; soLuot: number; canhBao: string[] }> {
   const startTime = Date.now();
   const canhBao: string[] = [];
+
+  // Prompt động: lấy các lựa chọn ở bước bối cảnh để quyết định không khí, chất vải, dáng may, ánh sáng
+  const ctxBoiCanh = store.getState().contextSetup;
+  const boiCanhAnh = dungBoiCanhAnh(ctxBoiCanh, opts.boiCanh, opts.look);
 
   // 1. Tinh toan khoa bo nho dem IndexedDB
   const garmentIds = [
@@ -697,7 +629,7 @@ export async function macThu(opts: {
 
   const anhHashDauVao = taoHashKhoa(opts.anhNguoi.slice(0, 300));
   const cacheKey = taoHashKhoa(
-    `${anhHashDauVao}_${garmentIds}_${opts.background.id}_${opts.chatLuong}`
+    `${anhHashDauVao}_${garmentIds}_${opts.background.id}_${opts.chatLuong}_${JSON.stringify(ctxBoiCanh)}`
   );
 
   // Kiem tra cache IndexedDB
@@ -712,6 +644,14 @@ export async function macThu(opts: {
     };
   }
 
+  // Không có máy dựng ảnh (chạy local chưa có khoá Gemini): nói thẳng, không trả ảnh giả, không trừ lượt
+  if (!ai) {
+    return { anh: '', soLuot: 0, canhBao: [THONG_BAO_CHUA_CO_MAY_DUNG] };
+  }
+
+  // Có ảnh người dùng thì dựng trên ảnh đó; không có thì dựng trên người mẫu do AI tạo (tầng 2)
+  const coAnhNguoi = Boolean(opts.anhNguoi);
+
   // Cap nhat dem telemetry va quota ngay
   recordTryOnUsage(opts.chatLuong);
   tryOnStats.soLuotGoiAnh++;
@@ -724,7 +664,7 @@ export async function macThu(opts: {
   // ---------------------------------------------------------------------------
   // 2. CHẾ ĐỘ ĐỔI NHANH MỘT MÓN (KHI CÓ anhTruoc VÀ CHỈ 1 LỚP THAY ĐỔI)
   // ---------------------------------------------------------------------------
-  if (opts.anhTruoc && lastLookExecuted) {
+  if (coAnhNguoi && opts.anhTruoc && lastLookExecuted) {
     const singleChange = phatHienDoiDungMotMon(opts.look, lastLookExecuted);
     if (singleChange && ai) {
       try {
@@ -764,12 +704,13 @@ export async function macThu(opts: {
   // ---------------------------------------------------------------------------
   // 3. LUỒNG THI HÀNH TIÊU CHUẨN (NHANH HOẶC KỸ)
   // ---------------------------------------------------------------------------
-  if (ai) {
+  if (ai && coAnhNguoi) {
     try {
       if (opts.chatLuong === 'ky') {
         // --- CHẾ ĐỘ KỸ, HAI LƯỢT ---
         // Lượt 1: Giữ nguyên nền gốc từ Image 1
         const luot1Data = await xayDungPromptVaAnh({
+          boiCanhAnh,
           anhNguoi: opts.anhNguoi,
           look: opts.look,
           boiCanh: opts.boiCanh,
@@ -820,6 +761,7 @@ export async function macThu(opts: {
       } else {
         // --- CHẾ ĐỘ NHANH, MỘT LƯỢT ---
         const quickData = await xayDungPromptVaAnh({
+          boiCanhAnh,
           anhNguoi: opts.anhNguoi,
           look: opts.look,
           boiCanh: opts.boiCanh,
@@ -869,14 +811,12 @@ export async function macThu(opts: {
         errMsg.includes('resource_exhausted') ||
         errMsg.includes('quota')
       ) {
-        const flatComposite = await taoBanGhepLopPhang(opts.look, opts.background);
-        const stampedFlat = await dongDauAnhAI(flatComposite);
         tryOnStats.soLanTheoTangDuPhong.tang3++;
         tryOnStats.soLanDuPhong++;
         return {
-          anh: stampedFlat,
+          anh: '',
           soLuot: 0,
-          canhBao: ['Hôm nay đã dùng hết lượt dựng ảnh. Hệ thống chuyển sang bản ghép lớp phẳng.'],
+          canhBao: ['Hôm nay đã dùng hết lượt dựng ảnh. Bộ đồ vẫn được kiểm tra đầy đủ, mai bạn dựng ảnh lại nhé.'],
         };
       }
     }
@@ -887,10 +827,11 @@ export async function macThu(opts: {
   // ---------------------------------------------------------------------------
 
   // TẦNG 1: Thử lại 1 lần với prompt bỏ bối cảnh nền, giữ nguyên nền gốc
-  if (ai) {
+  if (ai && coAnhNguoi) {
     try {
       tryOnStats.soLanTheoTangDuPhong.tang1++;
       const fallbackPromptData = await xayDungPromptVaAnh({
+          boiCanhAnh,
         anhNguoi: opts.anhNguoi,
         look: opts.look,
         boiCanh: opts.boiCanh,
@@ -931,9 +872,11 @@ export async function macThu(opts: {
       'người Việt Nam trẻ tuổi, dáng chuẩn mực cân đối, đứng thẳng đoan trang, biểu cảm điềm tĩnh. Ràng buộc: ảnh nửa người trở lên, nền trơn theo không gian văn hoá đã chọn, ánh sáng tự nhiên bên, không chữ trong ảnh, không logo, không watermark.';
 
     // Tình huống a: Model từ chối dựng ảnh có người
-    canhBao.push(
-      'Lần này hệ thống chưa dựng được ảnh. Bạn thử ảnh sáng hơn và nền đơn giản hơn, hoặc dùng người mẫu.'
-    );
+    if (coAnhNguoi) {
+      canhBao.push(
+        'Lần này hệ thống chưa dựng được ảnh. Bạn thử ảnh sáng hơn và nền đơn giản hơn, hoặc dùng người mẫu.'
+      );
+    }
 
     // Neu co API, thu sinh tren avatar persona; neu khong co, dung mau pre-rendered tuong thich
     if (ai) {
@@ -969,36 +912,28 @@ export async function macThu(opts: {
       }
     }
 
-    const demoUrl = await dongDauAnhAI(DEMO_RESPONSES.renderLook.imageUrl);
+    // Không dựng được cả trên người mẫu: không trả ảnh giả
     tryOnStats.tongThoiGianChoMs += Date.now() - startTime;
     luuStats();
 
     return {
-      anh: demoUrl,
+      anh: '',
       soLuot: 0,
-      canhBao,
+      canhBao: canhBao.length > 0 ? canhBao : ['Lần này hệ thống chưa dựng được ảnh người mẫu. Bạn bấm mặc thử lại sau ít phút.'],
     };
   } catch (tier2Err) {
     console.warn('[Tang 2 du phong khong thanh cong, tiep tuc xuong Tang 3]:', tier2Err);
   }
 
-  // TẦNG 3: Hiện bản ghép lớp phẳng như cũ, kèm nút thử lại
+  // TẦNG 3: Không còn cách dựng ảnh thật. Không vẽ ảnh thay thế, chỉ báo và giữ nút thử lại.
   tryOnStats.soLanTheoTangDuPhong.tang3++;
   tryOnStats.soLanDuPhong++;
-
-  const flatComposite = await taoBanGhepLopPhang(opts.look, opts.background);
-  const stampedFlat = await dongDauAnhAI(flatComposite);
-
-  canhBao.push(
-    'Chưa thể sinh ảnh AI lúc này, đây là bản ghép minh họa lớp phẳng.'
-  );
-
   tryOnStats.tongThoiGianChoMs += Date.now() - startTime;
   luuStats();
 
   return {
-    anh: stampedFlat,
+    anh: '',
     soLuot: 0,
-    canhBao,
+    canhBao: ['Lần này hệ thống chưa dựng được ảnh. Bộ đồ vẫn được kiểm tra đầy đủ, bạn bấm mặc thử lại sau ít phút.'],
   };
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useStore, store } from '../../lib/store';
 import { GARMENTS } from '../../data/garments';
-import { TRADITIONAL_COLORS, layTenMucTrangTrong } from '../../data/palettes';
+import { TRADITIONAL_COLORS, layTenMucTrangTrong, layTenMau } from '../../data/palettes';
 import { FALLBACK_OUTFITS_BY_EVENT } from '../../data/fallbackLooks';
 import { tinhHaiHoa, ColorInputItem } from '../../lib/colorHarmony';
 import { kiemTraVanHoa } from '../../lib/cultureGuard';
@@ -132,7 +132,8 @@ export default function CompareLooksModal({
         lookState,
         event,
         contextSetup.phongCach,
-        contextSetup.regionId
+        contextSetup.regionId,
+        contextSetup.nguoiMac
       );
       const scoreVanHoa =
         flagResult.mucDoChung === 'xanh' ? 98 : flagResult.mucDoChung === 'vang' ? 74 : 36;
@@ -433,33 +434,19 @@ export default function CompareLooksModal({
                 {/* 1. HÀNG ẢNH THU NHỎ */}
                 <tr>
                   <td className="sticky left-0 z-20 bg-[#F2EDE3] p-3 font-mono text-xs text-[#6E5439] uppercase border-r border-[#2C2A26]/20 shadow-xs">
-                    Ảnh phác thảo
+                    Màu chính
                   </td>
                   {evaluatedLooks.map((look) => (
                     <td
                       key={look.id}
                       className="p-3 border-r border-[#2C2A26]/15 last:border-r-0 align-top bg-[#FBF8F2]"
                     >
-                      <div className="w-20 h-26 border border-[#C39A27] rounded-[2px] bg-[#F2EDE3] flex items-center justify-center p-2 relative overflow-hidden shadow-2xs">
-                        <svg viewBox="0 0 100 130" className="w-full h-full" fill="none">
-                          {/* Khăn / Mũ */}
-                          <ellipse cx="50" cy="22" rx="14" ry="6" fill="#2C2A26" />
-                          <circle cx="50" cy="30" r="8" fill="#E8DEC8" />
-                          {/* Quần */}
-                          <path d="M42,75 L36,118 L48,118 L50,85 Z" fill="#F2EDE3" stroke="#D8D0C2" strokeWidth="0.5" />
-                          <path d="M58,75 L64,118 L52,118 L50,85 Z" fill="#F2EDE3" stroke="#D8D0C2" strokeWidth="0.5" />
-                          {/* Áo */}
-                          <path
-                            d="M38,38 L22,70 L34,74 L40,55 L38,98 L62,98 L60,55 L66,74 L78,70 L62,38 Z"
-                            fill={look.mauChinhHex}
-                          />
-                          <circle cx="53" cy="42" r="1" fill="#C39A27" />
-                          <circle cx="55" cy="50" r="1" fill="#C39A27" />
-                        </svg>
-                        <div
-                          className="absolute bottom-1 right-1 w-2.5 h-2.5 rounded-full border border-white"
-                          style={{ backgroundColor: look.mauChinhHex }}
-                        />
+                      {/* Mẫu màu chính của look, không vẽ hình người */}
+                      <div className="w-20 border border-[#C39A27] rounded-[2px] bg-[#F2EDE3] overflow-hidden shadow-2xs">
+                        <div className="h-16" style={{ backgroundColor: look.mauChinhHex }} />
+                        <p className="px-1.5 py-1 font-mono text-[9px] leading-tight text-[#2C2A26] m-0">
+                          {layTenMau(look.mauChinhHex)}
+                        </p>
                       </div>
                     </td>
                   ))}

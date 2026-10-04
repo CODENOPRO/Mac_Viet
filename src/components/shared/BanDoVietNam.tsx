@@ -10,6 +10,8 @@ export interface BanDoVietNamProps {
   onChonVung: (vung: string) => void;
   kichThuoc: 'lon' | 'vua';
   hienNhanDao: boolean;
+  /** Ghi đè kích thước svg, ví dụ khi muốn bản đồ cao theo màn hình */
+  svgClassName?: string;
 }
 
 export default function BanDoVietNam({
@@ -17,6 +19,7 @@ export default function BanDoVietNam({
   onChonVung,
   kichThuoc,
   hienNhanDao,
+  svgClassName,
 }: BanDoVietNamProps) {
   const [hoveredRegion, setHoveredRegion] = useState<string | null>(null);
   const [hoveredIsland, setHoveredIsland] = useState<'HOANG_SA' | 'TRUONG_SA' | null>(null);
@@ -28,7 +31,7 @@ export default function BanDoVietNam({
       <div className="relative w-full flex items-center justify-center">
         <svg
           viewBox="40 100 1260 2260"
-          className={`w-full ${maxSvgWidth} h-auto drop-shadow-sm overflow-visible text-inherit`}
+          className={svgClassName ? `${svgClassName} overflow-visible text-inherit` : `w-full ${maxSvgWidth} h-auto drop-shadow-sm overflow-visible text-inherit`}
           aria-label="Bản đồ chủ quyền lãnh thổ Việt Nam và bốn vùng văn hóa y phục"
         >
           <defs>
@@ -58,7 +61,7 @@ export default function BanDoVietNam({
               <polygon
                 points="0,0 520,0 470,630 0,630"
                 fill="#A8322A"
-                fillOpacity={vungDangChon === 'R04' ? 0.22 : 0}
+                fillOpacity={vungDangChon === 'R04' ? 0.42 : hoveredRegion === 'R04' ? 0.16 : 0}
                 className="transition-opacity duration-300"
               />
 
@@ -66,7 +69,7 @@ export default function BanDoVietNam({
               <polygon
                 points="520,0 1250,0 1250,630 470,630"
                 fill="#A8322A"
-                fillOpacity={vungDangChon === 'R01' ? 0.22 : 0}
+                fillOpacity={vungDangChon === 'R01' ? 0.42 : hoveredRegion === 'R01' ? 0.16 : 0}
                 className="transition-opacity duration-300"
               />
 
@@ -77,7 +80,7 @@ export default function BanDoVietNam({
                 width="1250"
                 height="1130"
                 fill="#A8322A"
-                fillOpacity={vungDangChon === 'R02' ? 0.22 : 0}
+                fillOpacity={vungDangChon === 'R02' ? 0.42 : hoveredRegion === 'R02' ? 0.16 : 0}
                 className="transition-opacity duration-300"
               />
 
@@ -88,7 +91,7 @@ export default function BanDoVietNam({
                 width="1250"
                 height="600"
                 fill="#A8322A"
-                fillOpacity={vungDangChon === 'R03' ? 0.22 : 0}
+                fillOpacity={vungDangChon === 'R03' ? 0.42 : hoveredRegion === 'R03' ? 0.16 : 0}
                 className="transition-opacity duration-300"
               />
             </g>
@@ -377,10 +380,10 @@ export default function BanDoVietNam({
       </div>
 
       <div className="flex flex-col items-center gap-1.5 mt-3 px-2 max-w-md text-center pointer-events-none">
-        <p className="font-mono text-[10px] text-[#C39A27] tracking-wider uppercase font-medium leading-relaxed">
-          RANH GIOI VUNG MANG TINH UOC LE THEO DAC TRUNG TRANG PHUC, KHONG PHAI DIA GIOI HANH CHINH.
+        <p className="font-sans text-[11px] text-[#C39A27] leading-relaxed m-0">
+          Ranh giới vùng mang tính ước lệ theo đặc trưng trang phục, không phải địa giới hành chính.
         </p>
-        <p className="font-mono text-[9px] opacity-60 tracking-wider leading-relaxed">
+        <p className="font-mono text-[10px] opacity-75 leading-relaxed m-0">
           Bản đồ: Vietnam location map, Uwe Dedering, CC BY-SA 3.0, Natural Earth.
         </p>
       </div>

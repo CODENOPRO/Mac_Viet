@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useStore, store } from '../../lib/store';
 import { EVENTS } from '../../data/events';
 import { REGIONS } from '../../data/regions';
-import { IMAGES } from '../../data/images';
 import { layTenMucTrangTrong } from '../../data/palettes';
 import { VaiTro, PhongCach, NganSach, formatStudioStepLabel } from '../../types';
 
@@ -52,10 +51,10 @@ export default function Step1BoiCanh() {
       <div>
         <span className="micro-label text-[#A8322A]">{formatStudioStepLabel(1)}</span>
         <h2 className="font-display text-3xl text-[#2C2A26] font-normal mt-1">
-          Thiết lập bối cảnh &amp; quy chuẩn ứng xử
+          Bạn mặc cho dịp nào, ở vùng nào?
         </h2>
         <p className="text-sm font-sans text-[#6E5439] mt-1 max-w-xl">
-          Chọn Sự kiện và Vùng miền để bắt đầu. Hệ thống Culture Guard sẽ tự động áp dụng các quy chuẩn điển lễ phù hợp nhất.
+          Chọn hai thứ này là đủ để bắt đầu. Các tuỳ chọn khác đã có sẵn giá trị mặc định.
         </p>
       </div>
 
@@ -161,14 +160,6 @@ export default function Step1BoiCanh() {
             <div className="flex flex-col gap-2.5 pt-4">
               {REGIONS.map((r) => {
                 const isSelected = contextSetup.regionId === r.id;
-                const regionBg =
-                  r.id === 'bac' || r.id === 'R01'
-                    ? IMAGES.regionBacBo
-                    : r.id === 'trung' || r.id === 'R02'
-                    ? IMAGES.regionTrungBo
-                    : r.id === 'nam' || r.id === 'R03'
-                    ? IMAGES.regionNamBo
-                    : IMAGES.regionTayBac;
 
                 return (
                   <button
@@ -184,11 +175,6 @@ export default function Step1BoiCanh() {
                         : 'border-[#2C2A26]/12 bg-[#FBF8F2] hover:border-[#2C2A26]/40'
                     }`}
                   >
-                    {/* Ảnh nền nhỏ với lớp phủ bảo vệ tương phản */}
-                    <div
-                      className="absolute inset-0 opacity-15 group-hover:opacity-25 transition-opacity bg-cover bg-center pointer-events-none"
-                      style={{ backgroundImage: `url("${regionBg}")` }}
-                    />
                     <div className="relative z-10">
                       <span className="font-display text-base text-[#2C2A26] block leading-tight">
                         {r.ten}

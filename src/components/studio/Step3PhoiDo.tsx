@@ -8,11 +8,18 @@ import { GarmentLayer, Garment, Motif, Background } from '../../types';
 import { tinhHaiHoa, ColorInputItem } from '../../lib/colorHarmony';
 import { kiemTraVanHoa } from '../../lib/cultureGuard';
 import { macThu } from '../../lib/tryOn';
+import { dungBoiCanhAnh } from '../../lib/promptDong';
 import CultureFlagPanel from './CultureFlagPanel';
-import BanDaChonPanel from './BanDaChonPanel';
 import AiExplanationModal from './AiExplanationModal';
-import { DEMO_RESPONSES } from '../../data/demoResponses';
 import { getDailyQuota, exportStampedImage } from '../../lib/tryOnGuard';
+
+const TEN_MUC: Record<number, string> = {
+  1: 'Thường ngày',
+  2: 'Dạo phố',
+  3: 'Có lễ',
+  4: 'Trang trọng',
+  5: 'Đại lễ',
+};
 
 export default function Step3PhoiDo() {
   const {
@@ -36,6 +43,7 @@ export default function Step3PhoiDo() {
   const [showBgDropdown, setShowBgDropdown] = useState(false);
   const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
   const [showWhyModal, setShowWhyModal] = useState(false);
+  const [showChiTietDiem, setShowChiTietDiem] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [dailyQuota, setDailyQuota] = useState(getDailyQuota);
   const [isNetworkError, setIsNetworkError] = useState(false);
@@ -46,7 +54,7 @@ export default function Step3PhoiDo() {
   // 1. Xác định bối cảnh nền mặc định (nếu chưa chọn, tự khớp theo sự kiện & vùng)
   const currentBg: Background =
     BACKGROUNDS.find((b) => b.id === tryOnBackgroundId) ||
-    chonBoiCanhTuDong(selectedEvent.id, selectedRegion.id);
+    chonBoiCanhTuDong(selectedEvent.id, selectedRegion.id, lookState.mauChinh);
 
   // 2. Trạng thái ảnh: kiểm tra người dùng đã có ảnh hay chưa
   const hasPhoto = Boolean(userPhoto || activeTryOnImage);
@@ -94,7 +102,8 @@ export default function Step3PhoiDo() {
   // ---------------------------------------------------------------------------
   // 5. THỰC HIỆN HÀNH ĐỘNG MẶC THỬ / MẶC LẠI
   // ---------------------------------------------------------------------------
-  const handleTriggerTryOn = async () => {
+  // dungNguoiMau: bỏ qua ảnh người dùng, nhờ AI dựng trên người mẫu
+  const handleTriggerTryOn = async (dungNguoiMau = false) => {
     if (isProcessing) return;
 
     // Giới hạn chế độ Kỹ tính 2 lượt / ngày
@@ -116,10 +125,11 @@ export default function Step3PhoiDo() {
 
     try {
       // Chuẩn bị ảnh gốc làm đầu vào
-      const sourcePersonPhoto = userPhoto || DEMO_RESPONSES.renderLook.imageUrl;
+      // Không có ảnh thì để trống, macThu sẽ dựng trên người mẫu do AI tạo. Không dùng hình vẽ thay ảnh người.
+      const sourcePersonPhoto = dungNguoiMau ? '' : userPhoto || '';
 
       // Kiểm tra chế độ đổi nhanh 1 món nếu đã có ảnh mặc thử trước và chỉ đúng 1 món thay đổi
-      const canQuickChange = Boolean(activeTryOnImage && lastTriedLook);
+      const canQuickChange = Boolean(!dungNguoiMau && activeTryOnImage && lastTriedLook);
 
       const res = await macThu({
         anhNguoi: sourcePersonPhoto,
@@ -172,11 +182,10 @@ export default function Step3PhoiDo() {
   };
 
   const handleSwitchToModelPersona = () => {
-    store.setUserPhoto(DEMO_RESPONSES.renderLook.imageUrl);
     setIsRefusalError(false);
-    setStatusMessage('Đã chuyển sang dáng người mẫu tham chiếu chuẩn mực. Đang chuẩn bị dựng lại...');
+    setStatusMessage('Đang dựng bộ đồ trên người mẫu do AI tạo...');
     setTimeout(() => {
-      handleTriggerTryOn();
+      handleTriggerTryOn(true);
     }, 150);
   };
 
@@ -215,14 +224,16 @@ export default function Step3PhoiDo() {
   const scoreMau = colorHarmonyResult.diem;
 
   const topLevel = lookState.thuongY?.mucTrangTrong ?? 3;
-  const diffFormality = Math.abs(topLevel - selectedEvent.mucTrangTrongYeuCau);
+  const mucYeuCau = contextSetup.mucTrangTrong ?? selectedEvent.mucTrangTrongYeuCau;
+  const diffFormality = Math.abs(topLevel - mucYeuCau);
   const scoreBoiCanh = diffFormality === 0 ? 96 : diffFormality === 1 ? 82 : 55;
 
   const cultureFlagResult = kiemTraVanHoa(
     lookState,
     selectedEvent,
     contextSetup.phongCach,
-    contextSetup.regionId
+    contextSetup.regionId,
+    contextSetup.nguoiMac
   );
 
   const getGarmentsByLayer = (layer: GarmentLayer): Garment[] => {
@@ -237,7 +248,7 @@ export default function Step3PhoiDo() {
           <button
             type="button"
             onClick={() => store.setStudioStep(2)}
-            className="px-3 py-1.5 font-mono text-xs text-[#2C2A26] border border-[#2C2A26]/20 hover:border-[#2C2A26] transition-colors"
+            className="px-3 py-1.5 max-md:min-h-11 font-mono text-xs text-[#2C2A26] border border-[#2C2A26]/20 hover:border-[#2C2A26] transition-colors"
           >
             ← BƯỚC 2: ĐỔI ẢNH
           </button>
@@ -297,11 +308,11 @@ export default function Step3PhoiDo() {
       {/* =======================================================================
           BỐ CỤC BA KHU VỰC: TRÁI 50% (ẢNH + BẠN ĐÃ CHỌN) | GIỮA 28% (6 LỚP) | PHẢI 22% (CHỈ SỐ)
           ======================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-[50%_28%_22%] gap-5 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[400px_minmax(0,1fr)] gap-6 items-start">
         {/* =====================================================================
             CỘT TRÁI (50%): KHU ẢNH VÀ KHỐI BẠN ĐÃ CHỌN NẰM NGAY CẠNH NHAU
             ===================================================================== */}
-        <div className="lg:sticky lg:top-4 grid grid-cols-1 md:grid-cols-2 gap-3.5 items-start">
+        <div className="lg:sticky lg:top-4 flex flex-col gap-3.5">
           <div className="border border-[#2C2A26]/18 bg-[#FBF8F2] p-3.5 corner-mark flex flex-col gap-2.5 shadow-xs">
             {/* 1. KHUNG ẢNH CHÍNH TỈ LỆ 3:4 */}
             <div className="w-full aspect-[3/4] bg-[#0D1826] border border-[#2C2A26]/30 relative overflow-hidden flex items-center justify-center">
@@ -346,7 +357,7 @@ export default function Step3PhoiDo() {
                   <button
                     type="button"
                     onClick={() => store.setStudioStep(2)}
-                    className="px-3.5 py-1.5 border border-[#A8322A] bg-[#A8322A] text-[#F2EDE3] hover:bg-[#A8322A]/90 font-mono text-[11px] uppercase tracking-wider transition-colors cursor-pointer shadow-xs"
+                    className="px-3.5 py-1.5 max-md:min-h-11 border border-[#A8322A] bg-[#A8322A] text-[#F2EDE3] hover:bg-[#A8322A]/90 font-mono text-[11px] uppercase tracking-wider transition-colors cursor-pointer shadow-xs"
                   >
                     Thêm ảnh của tôi
                   </button>
@@ -375,45 +386,16 @@ export default function Step3PhoiDo() {
               )}
             </div>
 
-            {/* 3. DƯỚI ẢNH: HAI DÒNG NHÃN BẮT BUỘC THEO QUY CHUẨN */}
-            <div className="pt-2 flex flex-col gap-1 border-t border-[#2C2A26]/12">
-              <div className="font-mono text-[11px] font-bold text-[#A8322A] tracking-wider uppercase">
-                ANH MINH HOA DO AI DUNG
-              </div>
+            {/* NHÃN ẢNH AI: CHỈ HIỆN KHI ĐÃ CÓ ẢNH MẶC THỬ */}
+            {activeTryOnImage && (
               <button
                 type="button"
                 onClick={() => setShowWhyModal(true)}
                 className="text-left font-sans text-xs text-[#6E5439] hover:text-[#A8322A] hover:underline transition-colors cursor-pointer leading-snug"
               >
-                Chi tiết cổ áo, số khuy, hoa văn trong ảnh có thể chưa đúng. Đối chiếu với bảng bên cạnh.
+                Ảnh minh hoạ do AI dựng. Chi tiết cổ áo, khuy, hoa văn có thể chưa đúng.
               </button>
-            </div>
-
-            {/* 4. NÚT DỰNG LẠI NGAY DƯỚI ẢNH, KÈM DÒNG NHỎ */}
-            <div className="flex flex-col gap-1 pt-0.5">
-              <button
-                type="button"
-                disabled={isProcessing}
-                onClick={() => {
-                  if (!hasPhoto) {
-                    store.setStudioStep(2);
-                    return;
-                  }
-                  handleTriggerTryOn();
-                }}
-                className={`w-full py-2.5 px-3 border border-[#2C2A26]/30 font-mono text-xs uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs ${
-                  !hasPhoto
-                    ? 'bg-[#16243A]/40 text-[#F2EDE3]/60 hover:bg-[#16243A]/60'
-                    : 'bg-[#16243A] text-[#F2EDE3] hover:bg-[#0D1826]'
-                }`}
-                title={!hasPhoto ? 'Cần một tấm ảnh để mặc thử.' : ''}
-              >
-                <span>DỰNG LẠI</span>
-              </button>
-              <span className="font-sans text-[11px] text-[#6E5439] text-center">
-                Mỗi lần dựng cho kết quả hơi khác.
-              </span>
-            </div>
+            )}
 
             {/* CÁC THAO TÁC MẶC THỬ VÀ CHẾ ĐỘ */}
             <div className="flex flex-col gap-2.5 pt-1 border-t border-[#2C2A26]/10">
@@ -429,7 +411,7 @@ export default function Step3PhoiDo() {
                     }
                     handleTriggerTryOn();
                   }}
-                  className={`flex-1 py-2.5 px-3 text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all corner-mark shadow-sm cursor-pointer ${
+                  className={`w-full py-3 px-3 text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all corner-mark shadow-sm cursor-pointer ${
                     isProcessing
                       ? 'bg-[#A8322A]/50 text-[#F2EDE3]/60 cursor-not-allowed'
                       : !hasPhoto
@@ -443,8 +425,28 @@ export default function Step3PhoiDo() {
                   )}
                   <span>{activeTryOnImage ? (isTryOnStale ? 'MẶC LẠI' : 'MẶC THỬ LẠI') : 'MẶC THỬ'}</span>
                 </button>
+              </div>
 
-                {/* CÔNG TẮC CHẤT LƯỢNG: NHANH / KỸ */}
+              {/* PROMPT ĐỘNG: CÁC BIẾN Ở BƯỚC BỐI CẢNH ĐANG ĐIỀU KHIỂN ẢNH */}
+              <div className="font-sans text-xs text-[#6E5439] leading-relaxed">
+                <span className="text-[#2C2A26] font-medium">Ảnh sẽ dựng theo: </span>
+                {dungBoiCanhAnh(contextSetup, selectedEvent, lookState).tomTat.join(' · ')}
+                <button
+                  type="button"
+                  onClick={() => store.setStudioStep(1)}
+                  className="ml-1 text-[#A8322A] hover:underline cursor-pointer"
+                >
+                  Đổi
+                </button>
+              </div>
+
+              <details className="group border-t border-[#2C2A26]/10 pt-2">
+                <summary className="cursor-pointer list-none font-sans text-xs text-[#6E5439] hover:text-[#2C2A26] flex items-center justify-between">
+                  <span>Tuỳ chọn ảnh: {tryOnQuality === 'ky' ? 'Kỹ' : 'Nhanh'} · {currentBg.ten}</span>
+                  <span className="font-mono group-open:rotate-180 transition-transform">▾</span>
+                </summary>
+                <div className="flex flex-col gap-2.5 pt-2.5">
+                  {/* CÔNG TẮC CHẤT LƯỢNG: NHANH / KỸ */}
                 <div className="flex items-center border border-[#2C2A26]/20 bg-[#F2EDE3] p-0.5 text-xs font-mono">
                   <button
                     type="button"
@@ -477,7 +479,6 @@ export default function Step3PhoiDo() {
                     KỸ
                   </button>
                 </div>
-              </div>
 
               {/* DÒNG NHẮC HẠN MỨC MỀM TRONG NGÀY (MỤC 2) */}
               {dailyQuota.totalCount >= 20 && (
@@ -503,7 +504,7 @@ export default function Step3PhoiDo() {
                 >
                   <div className="flex flex-col">
                     <span className="font-mono text-[9px] uppercase tracking-wider text-[#6E5439]">
-                      BỐI CẢNH NỀN ({currentBg.id})
+                      BỐI CẢNH NỀN
                     </span>
                     <span className="font-display text-xs text-[#2C2A26] font-medium">
                       {currentBg.ten}
@@ -534,17 +535,15 @@ export default function Step3PhoiDo() {
                         >
                           <div className="flex items-center justify-between">
                             <span className="font-display text-xs">{bg.ten}</span>
-                            <span className="font-mono text-[10px] opacity-75">{bg.id}</span>
                           </div>
-                          <span className="font-sans text-[10px] opacity-70 line-clamp-1 mt-0.5">
-                            {bg.moTaChoAI}
-                          </span>
                         </button>
                       );
                     })}
                   </div>
                 )}
               </div>
+                </div>
+              </details>
             </div>
 
             {/* 3. DẢI ẢNH NHỎ CÁC LẦN MẶC THỬ TRƯỚC */}
@@ -572,26 +571,15 @@ export default function Step3PhoiDo() {
               </div>
             )}
 
-            {/* 4. DƯỚI CÙNG: CÁC NÚT HÀNH ĐỘNG VÀ RANH GIỚI VĂN HÓA */}
-            <div className="pt-2 border-t border-[#2C2A26]/12 flex flex-col gap-2">
-              <div className="flex items-center justify-between gap-2">
-                <button
-                  type="button"
-                  onClick={() => exportStampedImage(displayedImage, `mac-viet-${selectedEvent.id}.jpg`)}
-                  className="px-3 py-1.5 border border-[#2C2A26]/30 hover:border-[#2C2A26] bg-[#F2EDE3] font-mono text-[10px] uppercase tracking-wider text-[#2C2A26] transition-colors cursor-pointer flex-1 text-center"
-                >
-                  TẢI ẢNH (CÓ DẤU AI)
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowWhyModal(true)}
-                  className="text-right font-sans text-xs text-[#A8322A] hover:underline cursor-pointer"
-                >
-                  Ranh giới văn hoá AI →
-                </button>
-              </div>
-            </div>
+            {activeTryOnImage && (
+              <button
+                type="button"
+                onClick={() => exportStampedImage(displayedImage, `mac-viet-${selectedEvent.id}.jpg`)}
+                className="w-full px-3 py-2 border border-[#2C2A26]/30 hover:border-[#2C2A26] bg-[#F2EDE3] font-mono text-[10px] uppercase tracking-wider text-[#2C2A26] transition-colors cursor-pointer"
+              >
+                Tải ảnh (có dấu AI)
+              </button>
+            )}
 
             {/* KHỐI XỬ LÝ LỖI VÀ THÔNG BÁO VĂN HOÁ TỬ TẾ */}
             {statusMessage && (
@@ -604,7 +592,7 @@ export default function Step3PhoiDo() {
                 {isNetworkError && (
                   <button
                     type="button"
-                    onClick={handleTriggerTryOn}
+                    onClick={() => handleTriggerTryOn()}
                     className="self-start px-3 py-1 bg-[#A8322A] text-[#F2EDE3] font-mono text-[11px] uppercase tracking-wider hover:bg-[#A8322A]/90 cursor-pointer"
                   >
                     THỬ LẠI
@@ -625,23 +613,72 @@ export default function Step3PhoiDo() {
             )}
           </div>
 
-          {/* CỘT 2 NẰM NGAY CẠNH ẢNH: KHỐI BẠN ĐÃ CHỌN */}
-          <BanDaChonPanel onOpenWhyModal={() => setShowWhyModal(true)} />
         </div>
 
         {/* =====================================================================
             CỘT GIỮA (36%): KHU CHỌN SÁU LỚP PHỤC TRANG (THU GỌN VỪA KHUNG)
             ===================================================================== */}
         <div className="flex flex-col gap-4">
-          {/* Thanh 6 tab lớp */}
-          <div className="flex flex-wrap gap-1 p-1 bg-[#F2EDE3] border border-[#2C2A26]/15">
+          {/* DẢI TRẠNG THÁI: HAI ĐIỂM VÀ CỜ VĂN HOÁ, CHI TIẾT BẤM MỚI MỞ */}
+          <div className="border border-[#2C2A26]/15 bg-[#FBF8F2]">
+            <button
+              type="button"
+              onClick={() => setShowChiTietDiem(!showChiTietDiem)}
+              className="w-full flex flex-wrap items-center gap-x-6 gap-y-1 px-4 py-3 text-left cursor-pointer"
+            >
+              <span className="font-sans text-sm text-[#2C2A26]">
+                Hài hoà màu <b className="font-mono">{scoreMau}</b>
+              </span>
+              <span className="font-sans text-sm text-[#2C2A26]">
+                Hợp bối cảnh <b className="font-mono">{scoreBoiCanh}</b>
+              </span>
+              <span className="flex items-center gap-2 font-sans text-sm text-[#2C2A26]">
+                <span
+                  className={`w-2.5 h-2.5 rounded-full ${
+                    cultureFlagResult.mucDoChung === 'xanh'
+                      ? 'bg-[#3F6B5A]'
+                      : cultureFlagResult.mucDoChung === 'vang'
+                      ? 'bg-[#C39A27]'
+                      : 'bg-[#A8322A]'
+                  }`}
+                />
+                {cultureFlagResult.mucDoChung === 'xanh'
+                  ? 'Chưa phát hiện điểm lệch'
+                  : cultureFlagResult.mucDoChung === 'vang'
+                  ? 'Hơi lệch bối cảnh'
+                  : 'Cần cân nhắc'}
+              </span>
+              <span className="ml-auto font-sans text-xs text-[#6E5439]">
+                {showChiTietDiem ? 'Ẩn chi tiết' : 'Xem chi tiết'}
+              </span>
+            </button>
+            {showChiTietDiem && (
+              <div className="px-4 pb-3 flex flex-col gap-1.5 border-t border-[#2C2A26]/10 pt-2.5">
+                <p className="font-sans text-xs text-[#2C2A26] leading-relaxed">
+                  {colorHarmonyResult.goiYSua[0]}
+                </p>
+                <p className="font-sans text-xs text-[#6E5439]">
+                  Mức trang trọng của áo: {TEN_MUC[lookState.thuongY?.mucTrangTrong ?? 3]}. Bạn chọn: {TEN_MUC[mucYeuCau]}.
+                </p>
+                <p className="font-sans text-xs text-[#6E5439]">
+                  Cờ văn hoá chấm trên lựa chọn của bạn, không chấm trên ảnh.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* CẢNH BÁO VĂN HOÁ: CHỈ HIỆN KHI CÓ ĐIỂM LỆCH */}
+          {cultureFlagResult.mucDoChung !== 'xanh' && <CultureFlagPanel customFlag={cultureFlagResult} />}
+
+          {/* Thanh 6 tab lớp, kèm món đang chọn */}
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-1 p-1 bg-[#F2EDE3] border border-[#2C2A26]/15">
             {[
-              { id: 'L1', label: '1. THƯỢNG Y' },
-              { id: 'L2', label: '2. HẠ Y' },
-              { id: 'L3', label: '3. THỦ PHỤC' },
-              { id: 'L4', label: '4. HÀI' },
-              { id: 'L5', label: '5. HOA VĂN' },
-              { id: 'L6', label: '6. MÀU SẮC' },
+              { id: 'L1', label: 'Thượng y', chon: lookState.thuongY?.ten },
+              { id: 'L2', label: 'Hạ y', chon: lookState.haY?.ten },
+              { id: 'L3', label: 'Thủ phục', chon: lookState.thuPhuc?.ten },
+              { id: 'L4', label: 'Hài', chon: lookState.hai?.ten },
+              { id: 'L5', label: 'Hoa văn', chon: lookState.hoaVan?.ten },
+              { id: 'L6', label: 'Màu', chon: TRADITIONAL_COLORS.find((c) => c.hex.toLowerCase() === lookState.mauChinh?.toLowerCase())?.ten },
             ].map((tab) => {
               const isActive = activeLayer === tab.id;
               return (
@@ -649,25 +686,27 @@ export default function Step3PhoiDo() {
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveLayer(tab.id as any)}
-                  className={`flex-1 min-w-[70px] py-1.5 px-1 font-mono text-[10px] tracking-wider text-center transition-colors cursor-pointer ${
+                  className={`py-2 px-2 text-left transition-colors cursor-pointer min-w-0 ${
                     isActive
-                      ? 'bg-[#16243A] text-[#F2EDE3] font-bold'
-                      : 'text-[#6E5439] hover:text-[#2C2A26]'
+                      ? 'bg-[#16243A] text-[#F2EDE3]'
+                      : 'text-[#2C2A26] hover:bg-[#FBF8F2]'
                   }`}
                 >
-                  {tab.label}
+                  <span className={`block font-mono text-[10px] uppercase tracking-wider ${isActive ? 'text-[#F2EDE3]/70' : 'text-[#6E5439]'}`}>
+                    {tab.label}
+                  </span>
+                  <span className="block font-sans text-xs truncate">{tab.chon || 'Chưa chọn'}</span>
                 </button>
               );
             })}
           </div>
 
           {/* NỘI DUNG TỪNG LỚP */}
-          <div className="border border-[#2C2A26]/15 bg-[#FBF8F2] p-4 corner-mark min-h-[460px]">
+          <div className="border border-[#2C2A26]/15 bg-[#FBF8F2] p-4">
             {/* LỚP 1: THƯỢNG Y */}
             {activeLayer === 'L1' && (
               <div className="flex flex-col gap-3">
-                <span className="micro-label text-[#2C2A26]">LỚP 1 · ÁO KHOÁC CHÍNH (THƯỢNG Y)</span>
-                <div className="flex flex-col gap-2 max-h-[500px] overflow-y-auto pr-1">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
                   {getGarmentsByLayer('thuong_y').map((g) => {
                     const isSelected = lookState.thuongY?.id === g.id;
                     return (
@@ -695,8 +734,7 @@ export default function Step3PhoiDo() {
             {/* LỚP 2: HẠ Y */}
             {activeLayer === 'L2' && (
               <div className="flex flex-col gap-3">
-                <span className="micro-label text-[#2C2A26]">LỚP 2 · QUẦN VÀ VÁY (HẠ Y)</span>
-                <div className="flex flex-col gap-2">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
                   {getGarmentsByLayer('ha_y').map((g) => {
                     const isSelected = lookState.haY?.id === g.id;
                     return (
@@ -724,8 +762,7 @@ export default function Step3PhoiDo() {
             {/* LỚP 3: THỦ PHỤC */}
             {activeLayer === 'L3' && (
               <div className="flex flex-col gap-3">
-                <span className="micro-label text-[#2C2A26]">LỚP 3 · MŨ VÀ KHĂN (THỦ PHỤC)</span>
-                <div className="flex flex-col gap-2">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
                   {getGarmentsByLayer('thu_phuc').map((g) => {
                     const isSelected = lookState.thuPhuc?.id === g.id;
                     return (
@@ -762,8 +799,7 @@ export default function Step3PhoiDo() {
             {/* LỚP 4: HÀI */}
             {activeLayer === 'L4' && (
               <div className="flex flex-col gap-3">
-                <span className="micro-label text-[#2C2A26]">LỚP 4 · GIÀY VÀ HÀI</span>
-                <div className="flex flex-col gap-2">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
                   {getGarmentsByLayer('hai').map((g) => {
                     const isSelected = lookState.hai?.id === g.id;
                     return (
@@ -791,8 +827,7 @@ export default function Step3PhoiDo() {
             {/* LỚP 5: HOA VĂN */}
             {activeLayer === 'L5' && (
               <div className="flex flex-col gap-3">
-                <span className="micro-label text-[#2C2A26]">LỚP 5 · HOA VĂN TRANG TRÍ</span>
-                <div className="grid grid-cols-1 gap-2 max-h-[480px] overflow-y-auto">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
                   {MOTIFS.map((m) => {
                     const isSelected = lookState.hoaVan?.id === m.id;
                     return (
@@ -827,7 +862,6 @@ export default function Step3PhoiDo() {
             {/* LỚP 6: MÀU SẮC */}
             {activeLayer === 'L6' && (
               <div className="flex flex-col gap-4">
-                <span className="micro-label text-[#2C2A26]">LỚP 6 · MÀU CHÍNH & BẢNG MÀU LỊCH SỬ</span>
                 <div className="grid grid-cols-2 gap-2">
                   {TRADITIONAL_COLORS.map((c) => {
                     const isSelected = lookState.mauChinh?.toLowerCase() === c.hex.toLowerCase();
@@ -875,64 +909,6 @@ export default function Step3PhoiDo() {
           </div>
         </div>
 
-        {/* =====================================================================
-            CỘT PHẢI (24%): BẢNG BA CHỈ SỐ HÀI HÒA & QUY CHUẨN VĂN HÓA
-            ===================================================================== */}
-        <div className="flex flex-col gap-4">
-          <div className="border border-[#2C2A26]/18 bg-[#FBF8F2] p-4 corner-mark flex flex-col gap-4">
-            <span className="micro-label text-[#A8322A]">ĐÁNH GIÁ TỔNG THỂ</span>
-
-            {/* CHỈ SỐ 1: HÀI HOÀ MÀU SẮC */}
-            <div className="p-3 bg-[#F2EDE3]/70 border border-[#2C2A26]/10">
-              <div className="flex items-baseline justify-between">
-                <span className="font-mono text-[10px] uppercase text-[#6E5439]">HÀI HOÀ MÀU</span>
-                <span className="font-mono text-sm font-bold text-[#A8322A]">{scoreMau}/100</span>
-              </div>
-              <div className="w-full bg-[#2C2A26]/15 h-1.5 mt-2">
-                <div className="bg-[#A8322A] h-full" style={{ width: `${scoreMau}%` }} />
-              </div>
-              <p className="font-sans text-[11px] text-[#2C2A26] mt-2 leading-relaxed">
-                {colorHarmonyResult.goiYSua[0]}
-              </p>
-            </div>
-
-            {/* CHỈ SỐ 2: HỢP BỐI CẢNH */}
-            <div className="p-3 bg-[#F2EDE3]/70 border border-[#2C2A26]/10">
-              <div className="flex items-baseline justify-between">
-                <span className="font-mono text-[10px] uppercase text-[#6E5439]">HỢP BỐI CẢNH</span>
-                <span className="font-mono text-sm font-bold text-[#16243A]">{scoreBoiCanh}/100</span>
-              </div>
-              <div className="w-full bg-[#2C2A26]/15 h-1.5 mt-2">
-                <div className="bg-[#16243A] h-full" style={{ width: `${scoreBoiCanh}%` }} />
-              </div>
-              <p className="font-sans text-[11px] text-[#6E5439] mt-2">
-                Trang trọng: Cấp {lookState.thuongY?.mucTrangTrong ?? 3} / Yêu cầu: Cấp {selectedEvent.mucTrangTrongYeuCau}
-              </p>
-            </div>
-
-            {/* CHỈ SỐ 3: CỜ VĂN HÓA */}
-            <div className="p-3 bg-[#F2EDE3]/70 border border-[#2C2A26]/10">
-              <div className="flex items-baseline justify-between mb-1">
-                <span className="font-mono text-[10px] uppercase text-[#6E5439]">CỜ VĂN HOÁ</span>
-                <span
-                  className={`font-mono text-[10px] px-1.5 py-0.5 uppercase ${
-                    cultureFlagResult.mucDoChung === 'xanh'
-                      ? 'bg-[#3F6B5A] text-[#F2EDE3]'
-                      : cultureFlagResult.mucDoChung === 'vang'
-                      ? 'bg-[#C39A27] text-[#0D1826]'
-                      : 'bg-[#A8322A] text-[#F2EDE3]'
-                  }`}
-                >
-                  {cultureFlagResult.mucDoChung === 'xanh' ? 'HỢP LỆ' : 'CẦN LƯU Ý'}
-                </span>
-              </div>
-              <p className="font-sans text-[11px] text-[#6E5439] mb-2">
-                Cờ chấm trên lựa chọn của bạn, không chấm trên ảnh.
-              </p>
-              <CultureFlagPanel customFlag={cultureFlagResult} />
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* MODAL GIẢI THÍCH VÌ SAO CHI TIẾT ẢNH AI CHƯA ĐÚNG */}
@@ -944,7 +920,7 @@ export default function Step3PhoiDo() {
       <div className="md:hidden fixed bottom-0 left-0 right-0 p-3 bg-[#FBF8F2] border-t border-[#2C2A26]/18 z-40 flex items-center gap-2 shadow-2xl">
         <button
           type="button"
-          onClick={handleTriggerTryOn}
+          onClick={() => handleTriggerTryOn()}
           disabled={isProcessing}
           className="flex-1 py-3 bg-[#A8322A] text-[#F2EDE3] font-mono text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm"
         >

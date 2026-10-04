@@ -24,9 +24,17 @@ export interface Source {
   nam: number | string;
   loai: 'sach' | 'bao_tang' | 'tu_lieu' | 'cong_dong';
   ghiChu: string;
-  url: string | null;
-  loaiTruyCap: 'truc_tuyen' | 'tu_lieu_in' | 'hien_vat_bao_tang';
+  url: string | null; // liên kết chính, bằng lienKet[0] nếu có
+  loaiTruyCap: 'truc_tuyen' | 'tu_lieu_in' | 'hien_vat_bao_tang' | 'chua_cong_bo';
   ghiChuTruyCap: string;
+  kiemChung: KiemChungNguon;
+}
+
+/** Cách người xem tự kiểm chứng một nguồn. Mọi liên kết đều đã được mở thử trước khi đưa vào. */
+export interface KiemChungNguon {
+  cach: 'mo_truc_tuyen' | 'tra_cuu_sach' | 'xem_hien_vat' | 'chua_cong_bo';
+  lienKet: { nhan: string; url: string }[];
+  huongDan: string; // cần đối chiếu điều gì ở liên kết
 }
 
 export interface Garment {
@@ -47,6 +55,8 @@ export interface Garment {
   sourceIds: string[];
   doChacChan: CertaintyLevel;
   anh?: string; // dataURL hoặc đường dẫn ảnh hiện vật tham chiếu
+  moTaHinhAnh?: string; // mô tả cấu trúc bằng tiếng Anh, chỉ dùng cho prompt sinh ảnh
+  anhThamChieuThat?: string; // ảnh chụp thật dùng làm tham chiếu cho model, không dùng hình vẽ
 }
 
 export interface Background {
@@ -55,6 +65,7 @@ export interface Background {
   moTaChoAI: string;
   hopVoiSuKien: string[];
   hopVoiVung: string[];
+  hex?: string;
 }
 
 export interface Motif {

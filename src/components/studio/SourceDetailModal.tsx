@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Source } from '../../types';
+import KhoiKiemChung from '../shared/KhoiKiemChung';
 
 interface SourceDetailModalProps {
   source: Source | null;
@@ -93,14 +94,7 @@ export default function SourceDetailModal({ source, onClose }: SourceDetailModal
             </p>
           </div>
 
-          <div className="p-3 bg-[#16243A] text-[#F2EDE3] border border-[#C39A27]/40 flex flex-col gap-1">
-            <span className="font-mono text-[10px] uppercase text-[#C39A27] tracking-wider font-bold">
-              NGUYÊN TẮC VĂN HÓA MẶC VIỆT
-            </span>
-            <p className="text-[11px] leading-relaxed opacity-90">
-              Mọi quy tắc văn hoá trong hệ thống đều được bảo chứng từ các nguồn khảo chứng xác thực. Mặc Việt kiên định không tự suy diễn lịch sử.
-            </p>
-          </div>
+          <KhoiKiemChung source={source} />
         </div>
 
         <div className="mt-5 pt-3 border-t border-[#2C2A26]/15 flex justify-end">

@@ -35,6 +35,8 @@ export default function App() {
         <Preloader
           onComplete={() => {
             setIsPreloaded(true);
+            // Báo cho tiền sảnh bắt đầu mở màn
+            window.dispatchEvent(new Event('macviet:mo-man'));
             // Gọi ScrollTrigger.refresh() sau khi preloader đóng để đồng bộ kích thước khung hình
             requestAnimationFrame(() => {
               ScrollTrigger.refresh();
