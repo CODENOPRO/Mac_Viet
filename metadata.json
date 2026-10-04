@@ -1,0 +1,6 @@
+{
+  "name": "Mặc Việt — Phối Việt phục, đúng chất, đúng chuyện",
+  "description": "Ứng dụng phối trang phục truyền thống Việt Nam theo sự kiện, vùng miền và phong cách cá nhân, kèm cơ chế bảo vệ tính đúng đắn văn hoá.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,18 @@
+@import "tailwindcss";
+@import "./styles/tokens.css";
+
+@theme {
+  --color-cham: #16243A;
+  --color-cham-sau: #0D1826;
+  --color-nga: #F2EDE3;
+  --color-gao: #FBF8F2;
+  --color-dieu: #A8322A;
+  --color-hoang: #C39A27;
+  --color-nau-non: #6E5439;
+  --color-the: #2C2A26;
+
+  --font-serif: 'Fraunces', 'Lora', serif;
+  --font-display: 'Fraunces', 'Lora', serif;
+  --font-sans: 'Be Vietnam Pro', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
