@@ -12,7 +12,7 @@ import { streamCuNgheTraLoi } from '../../lib/gemini';
 import SourceTag from '../shared/SourceTag';
 
 // Mã nguồn như [S01] chỉ dùng để kiểm định; người đọc thấy tên nguồn ở dòng Nguồn bên dưới.
-const boMaNguon = (text: string) => text.replace(/\s*\[S\d{2}\]/g, '');
+import { boMaNoiBo as boMaNguon } from '../../lib/boMaNoiBo';
 
 export interface CuNgheMessage {
   id: string;

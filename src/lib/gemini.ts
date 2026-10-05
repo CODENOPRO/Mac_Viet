@@ -6,6 +6,7 @@ import { REGIONS } from '../data/regions';
 import { TRADITIONAL_COLORS } from '../data/palettes';
 import { FALLBACK_OUTFITS_BY_EVENT, FallbackOutfit } from '../data/fallbackLooks';
 import { DEMO_RESPONSES } from '../data/demoResponses';
+import { boMaNoiBoSau } from './boMaNoiBo';
 import { LookState, EventContext, CultureFlag } from '../types';
 
 // =============================================================================
@@ -130,7 +131,12 @@ function isDemoMode(): boolean {
 // =============================================================================
 // 5. LỚP BỌC goiModel() QUẢN LÝ CACHE, RETRY, TIMEOUT VÀ DỰ PHÒNG
 // =============================================================================
-async function goiModel<T>(params: {
+// Mọi kết quả trả cho giao diện, kể cả kết quả đã lưu đệm từ trước, đều được bỏ mã nội bộ như [S01]
+async function goiModel<T>(params: Parameters<typeof goiModelGoc<T>>[0]): Promise<T> {
+  return boMaNoiBoSau(await goiModelGoc<T>(params));
+}
+
+async function goiModelGoc<T>(params: {
   tenHam: string;
   dauVao: any;
   modelName?: string;
