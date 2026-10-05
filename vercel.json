@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/api/gemini/:duong(.*)", "destination": "/api/gemini?duong=:duong" }
+  ],
+  "functions": {
+    "api/gemini.ts": { "maxDuration": 60 }
+  }
+}

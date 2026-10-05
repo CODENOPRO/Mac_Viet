@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import { taoAi, aiSanSang } from './aiClient';
 import { LookState, EventContext, Background } from '../types';
 import { GARMENTS } from '../data/garments';
 import { TRADITIONAL_COLORS } from '../data/palettes';
@@ -9,18 +9,9 @@ import { dungBoiCanhAnh, BoiCanhAnh } from './promptDong';
 // =============================================================================
 // 1. CẤU HÌNH API KEY VÀ KHỞI TẠO SDK @google/genai
 // =============================================================================
-const getApiKey = (): string => {
-  if (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) {
-    return process.env.GEMINI_API_KEY;
-  }
-  if (typeof window !== 'undefined' && (import.meta as any).env?.VITE_GEMINI_API_KEY) {
-    return (import.meta as any).env.VITE_GEMINI_API_KEY;
-  }
-  return '';
-};
-
-const apiKey = getApiKey();
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
+// Khoá không còn được đọc ở đây. Xem lib/aiClient.ts: gọi thẳng khi có khoá lúc build (AI Studio, máy dev),
+// gọi qua hàm trung gian api/gemini.ts khi chạy trên Vercel.
+const ai = taoAi();
 
 // =============================================================================
 // 2. HỆ THỐNG ĐO ĐẠC TELEMETRY CHO BỘ THỬ TRANG PHỤC (CTRL+SHIFT+D)
@@ -645,7 +636,7 @@ export async function macThu(opts: {
   }
 
   // Không có máy dựng ảnh (chạy local chưa có khoá Gemini): nói thẳng, không trả ảnh giả, không trừ lượt
-  if (!ai) {
+  if (!ai || !(await aiSanSang())) {
     return { anh: '', soLuot: 0, canhBao: [THONG_BAO_CHUA_CO_MAY_DUNG] };
   }
 

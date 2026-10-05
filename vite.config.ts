@@ -7,10 +7,14 @@ import { defineConfig } from 'vite';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(() => {
+  // Vercel tự đặt biến VERCEL=1 khi build. Trên Vercel tuyệt đối không nhúng khoá vào mã trình duyệt:
+  // khoá GEMINI_API_KEY chỉ được đọc ở hàm trung gian api/gemini.ts phía máy chủ.
+  const laVercel = Boolean(process.env.VERCEL);
   return {
     plugins: [react(), tailwindcss()],
     define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(process.env.GEMINI_API_KEY || ''),
+      'process.env.GEMINI_API_KEY': JSON.stringify(laVercel ? '' : process.env.GEMINI_API_KEY || ''),
+      __GEMINI_QUA_PROXY__: JSON.stringify(laVercel),
     },
     resolve: {
       alias: {

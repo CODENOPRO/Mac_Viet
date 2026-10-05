@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type, Schema } from '@google/genai';
+import { Type, Schema } from '@google/genai';
 import { GARMENTS } from '../data/garments';
 import { SOURCES } from '../data/sources';
 import { MOTIFS } from '../data/motifs';
@@ -7,23 +7,15 @@ import { TRADITIONAL_COLORS } from '../data/palettes';
 import { FALLBACK_OUTFITS_BY_EVENT, FallbackOutfit } from '../data/fallbackLooks';
 import { DEMO_RESPONSES } from '../data/demoResponses';
 import { boMaNoiBoSau } from './boMaNoiBo';
+import { taoAi, aiSanSang, coKhoaTrucTiep } from './aiClient';
 import { LookState, EventContext, CultureFlag } from '../types';
 
 // =============================================================================
 // 1. CẤU HÌNH API KEY VÀ KHỞI TẠO SDK @google/genai
 // =============================================================================
-const getApiKey = (): string => {
-  if (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) {
-    return process.env.GEMINI_API_KEY;
-  }
-  if (typeof window !== 'undefined' && (import.meta as any).env?.VITE_GEMINI_API_KEY) {
-    return (import.meta as any).env.VITE_GEMINI_API_KEY;
-  }
-  return '';
-};
-
-const apiKey = getApiKey();
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
+// Khoá không còn được đọc ở đây. Xem lib/aiClient.ts: gọi thẳng khi có khoá lúc build (AI Studio, máy dev),
+// gọi qua hàm trung gian api/gemini.ts khi chạy trên Vercel.
+const ai = taoAi();
 
 // =============================================================================
 // 2. ĐO ĐẠC STATS & TRẠNG THÁI KẾT NỐI
@@ -43,12 +35,19 @@ export const geminiStats: GeminiStats = {
   soLanLoi: 0,
   soLanDuPhong: 0,
   tongThoiGianChoMs: 0,
-  lanCuoiTrangThai: apiKey ? 'ready' : 'fallback',
+  lanCuoiTrangThai: coKhoaTrucTiep ? 'ready' : 'fallback',
 };
+
+// Bản Vercel: hỏi máy chủ đã có khoá chưa để chấm trạng thái hiện đúng
+if (ai && !coKhoaTrucTiep) {
+  void aiSanSang().then((ok) => {
+    geminiStats.lanCuoiTrangThai = ok ? 'ready' : 'fallback';
+  });
+}
 
 export function getGeminiConnectionStatus(): 'ready' | 'cached' | 'fallback' {
   if (isDemoMode()) return 'cached';
-  if (!apiKey) return 'fallback';
+  if (!ai) return 'fallback';
   return geminiStats.lanCuoiTrangThai;
 }
 
@@ -179,8 +178,8 @@ async function goiModelGoc<T>(params: {
     return cachedResult;
   }
 
-  // Nếu không có API Key, chuyển ngay sang đường dự phòng
-  if (!ai) {
+  // Nếu không có API Key, hoặc máy chủ Vercel chưa cấu hình khoá, chuyển ngay sang đường dự phòng
+  if (!ai || !(await aiSanSang())) {
     geminiStats.soLanDuPhong++;
     geminiStats.lanCuoiTrangThai = 'fallback';
     return duPhong();
@@ -995,7 +994,7 @@ export async function streamCuNgheTraLoi({
   };
 
   // 1. Kiểm tra nếu có API key và không ở chế độ demo
-  if (ai && !isDemoMode()) {
+  if (ai && !isDemoMode() && (await aiSanSang())) {
     try {
       const contents: any[] = [];
 
