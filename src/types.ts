@@ -5,7 +5,7 @@ export const TOTAL_STUDIO_STEPS = 4;
 export const formatStudioStepLabel = (step: number, title?: string): string => {
   const stepStr = step.toString().padStart(2, '0');
   const totalStr = TOTAL_STUDIO_STEPS.toString().padStart(2, '0');
-  return title ? `BUOC ${stepStr} / ${totalStr} · ${title}` : `BUOC ${stepStr} / ${totalStr}`;
+  return title ? `BƯỚC ${stepStr} / ${totalStr} · ${title}` : `BƯỚC ${stepStr} / ${totalStr}`;
 };
 export type GeminiConnectionStatus = 'ready' | 'cached' | 'fallback';
 
@@ -155,7 +155,7 @@ export interface LookState {
 }
 
 export interface CultureRule {
-  id: string; // CR-01 tới CR-20
+  id: string; // CR-01 tới CR-21
   ten: string;
   dieuKien: string; // mô tả bằng chữ cho con người đọc
   kiemTra: (look: LookState, boiCanh?: EventContext, regionId?: string) => boolean;

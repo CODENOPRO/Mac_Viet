@@ -6,7 +6,7 @@ export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-01',
     ten: 'Phẩm phục Nhật Bình trong bối cảnh thường ngày',
-    dieuKien: 'Áo Nhật Bình và sự kiện mức trang trọng từ 3 trở xuống (cà phê, dạo phố, thường nhật)',
+    dieuKien: 'Áo Nhật Bình mặc vào dịp không mang tính nghi lễ, như cà phê, dạo phố, Tết, kỷ yếu, ra mắt gia đình',
     kiemTra: (look: LookState, boiCanh?: EventContext): boolean => {
       const isNhatBinh = look.thuongY?.id === 'G06';
       const isLowFormality = boiCanh ? boiCanh.mucTrangTrongYeuCau <= 3 : false;
@@ -588,7 +588,7 @@ export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-16',
     ten: 'Đầu trần trong đại lễ nghi thức cấp cao',
-    dieuKien: 'Không đội mũ khăn thủ phục trong sự kiện có mức trang trọng từ 4 trở lên',
+    dieuKien: 'Không đội khăn hay mũ trong dịp trang trọng, như lễ chùa, lễ gia tiên, cưới hỏi, biểu diễn',
     kiemTra: (look: LookState, boiCanh?: EventContext): boolean => {
       const isHighFormality = (boiCanh?.mucTrangTrongYeuCau ?? 0) >= 4;
       const noHeadwear = !look.thuPhuc;
@@ -606,7 +606,7 @@ export const CULTURE_RULES: CultureRule[] = [
       },
     ],
     sourceIds: ['S01', 'S10'],
-    doChacChan: 'da_xac_lap',
+    doChacChan: 'thuc_hanh_hien_nay',
     phanLoaiLoi: 'nghi_le',
     apDung: (look: LookState): LookState => {
       const khanVan = GARMENTS.find((g) => g.id === 'G12');
@@ -746,7 +746,7 @@ export const CULTURE_RULES: CultureRule[] = [
       },
     ],
     sourceIds: ['S01', 'S10'],
-    doChacChan: 'da_xac_lap',
+    doChacChan: 'thuc_hanh_hien_nay',
     phanLoaiLoi: 'nghi_le',
     apDung: (look: LookState): LookState => ({ ...look, phuKienHienDai: false }),
     viDu: {
@@ -758,6 +758,54 @@ export const CULTURE_RULES: CultureRule[] = [
       hoaVan: null,
       mauChinh: '#16243A',
       phuKienHienDai: false,
+    },
+  },
+  {
+    // Bịt khoảng trống: trước đây chỉ Nhật Bình có luật về lễ phục mặc vào dịp thường ngày.
+    // Dữ liệu garments.ts đã ghi áo tấc và áo viên lĩnh không dùng cho sinh hoạt thường ngày.
+    id: 'CR-21',
+    ten: 'Lễ phục mặc vào dịp thường ngày',
+    dieuKien: 'Áo lễ phục như áo tấc, áo viên lĩnh mặc vào dịp đời thường như cà phê, dạo phố',
+    kiemTra: (look: LookState, boiCanh?: EventContext): boolean => {
+      const ao = look.thuongY;
+      if (!ao || !boiCanh) return false;
+      // Nhật Bình đã có luật riêng CR-01
+      if (ao.id === 'G06') return false;
+      return ao.mucTrangTrong - boiCanh.mucTrangTrongYeuCau >= 3;
+    },
+    mucDo: 'vang',
+    thongDiep: 'Đây là áo lễ phục, dữ liệu hiện vật ghi không dùng cho sinh hoạt thường ngày. Mặc vào dịp đời thường dễ làm bộ đồ nặng nề và mờ đi ý nghĩa nghi lễ của chiếc áo.',
+    cachSua: [
+      {
+        moTa: 'Đổi sang áo ngũ thân tay chẽn thanh thoát',
+        apDung: (look: LookState): LookState => {
+          const nguThan = GARMENTS.find((g) => g.id === 'G04');
+          return { ...look, thuongY: nguThan || look.thuongY };
+        },
+      },
+      {
+        moTa: 'Đổi sang áo dài tân thời, hợp dạo phố và chụp ảnh',
+        apDung: (look: LookState): LookState => {
+          const aoDai = GARMENTS.find((g) => g.id === 'G08');
+          return { ...look, thuongY: aoDai || look.thuongY };
+        },
+      },
+    ],
+    sourceIds: ['S01'],
+    doChacChan: 'thuc_hanh_hien_nay',
+    phanLoaiLoi: 'nghi_le',
+    apDung: (look: LookState): LookState => {
+      const nguThan = GARMENTS.find((g) => g.id === 'G04');
+      return { ...look, thuongY: nguThan || look.thuongY };
+    },
+    viDu: {
+      thuongY: GARMENTS.find((g) => g.id === 'G05') || null,
+      haY: GARMENTS.find((g) => g.id === 'G10') || null,
+      thuPhuc: GARMENTS.find((g) => g.id === 'G13') || null,
+      hai: GARMENTS.find((g) => g.id === 'G15') || null,
+      phuKien: [],
+      hoaVan: null,
+      mauChinh: '#16243A',
     },
   },
 ];

@@ -40,12 +40,14 @@ const FAQS: FAQItem[] = [
   {
     id: 5,
     question: 'App có lưu ảnh của tôi không?',
-    answer: 'Ứng dụng hoàn toàn không lưu trữ hình ảnh hay thông tin riêng tư của bạn trên bất kỳ máy chủ nào. Mọi thao tác phối đồ, kiểm tra độ hài hòa văn hóa và lưu lookbook đều được xử lý trực tiếp ngay trên trình duyệt thiết bị của bạn. Dữ liệu của bạn thuộc về chính bạn.',
+    answer:
+      'Ảnh bạn tải lên chỉ nằm trong bộ nhớ của tab trình duyệt, tải lại trang là mất, và nhóm không có máy chủ riêng để lưu ảnh. Trước khi dùng, ảnh được thu nhỏ và xoá thông tin EXIF như vị trí GPS ngay trên máy bạn. Khi bạn bấm Mặc thử, ảnh được gửi tới Google Gemini để dựng ảnh mặc thử, việc xử lý ở phía Google theo điều khoản của Google. Ảnh mặc thử đã dựng được lưu tạm trên chính trình duyệt của bạn, tối đa 20 ảnh, để khỏi phải dựng lại. Lookbook chỉ lưu tên các món đồ, không lưu ảnh.',
   },
   {
     id: 6,
     question: 'Tôi muốn góp ý sửa một thông tin thì làm thế nào?',
-    answer: 'Chúng tôi luôn trân trọng mọi phản hồi mang tính xây dựng từ cộng đồng nghiên cứu và người thực hành cổ phục. Bạn có thể gửi tư liệu đối chiếu kèm mã nguồn tham khảo qua hòm thư đóng góp của dự án Mặc Việt. Ban biên tập sẽ kiểm tra chéo cùng các chuyên gia trước mỗi đợt cập nhật dữ liệu.',
+    answer:
+      'Mỗi hiện vật và mỗi luật đều ghi nguồn kèm cách kiểm chứng, bấm vào dòng Nguồn là thấy, nên bạn có thể tự đối chiếu. Ở phiên bản dự thi này, app chưa có kênh nhận góp ý trực tiếp. Nguyên tắc của nhóm là chỉ sửa dữ liệu khi có nguồn đối chiếu đi kèm.',
   },
 ];
 
@@ -167,10 +169,7 @@ export default function Landing() {
       >
         <div className="max-w-4xl mx-auto w-full">
           <div className="room-text text-center mb-14">
-            <span className="font-mono text-xs uppercase tracking-widest text-[#A8322A]">
-              LỐI RA · ĐỐI THOẠI &amp; THỰC HÀNH
-            </span>
-            <h2 className="font-display text-3xl sm:text-5xl font-light text-[#2C2A26] tracking-tight mt-2">
+            <h2 className="font-display text-3xl sm:text-5xl font-light text-[#2C2A26] tracking-tight m-0">
               Những điều bạn hay băn khoăn.
             </h2>
           </div>
@@ -210,7 +209,7 @@ export default function Landing() {
               Bạn đã sẵn sàng khoác lên tà áo của mình?
             </h3>
             <p className="font-sans text-sm sm:text-base text-[#2C2A26]/75 max-w-md mx-auto mb-8 leading-relaxed">
-              Mời bạn bước sang Xưởng phối — không gian sáng tạo nơi bạn tự do phối đồ, kiểm tra hài hoà văn hoá và lưu giữ lookbook cá nhân.
+              Bước sang Xưởng phối để tự phối từng lớp áo, xem Culture Guard nhận xét kèm nguồn, và lưu bộ đồ vào lookbook.
             </p>
 
             <button

@@ -57,7 +57,7 @@ export default function DebugTelemetryModal() {
         <div className="p-4 md:px-6 border-b border-[#C39A27]/25 flex items-center justify-between bg-[#0D1826]">
           <div>
             <span className="font-mono text-[10px] uppercase tracking-widest text-[#C39A27]">
-              HE THONG DO DAC & GIAM SAT (CTRL+SHIFT+D)
+              HỆ THỐNG ĐO ĐẠC & GIÁM SÁT (CTRL+SHIFT+D)
             </span>
             <h2 id="telemetry-title" className="font-display text-xl text-[#F2EDE3] font-normal mt-0.5">
               Chỉ số vận hành Mặc Thử & Gemini
@@ -69,7 +69,7 @@ export default function DebugTelemetryModal() {
             className="font-mono text-xs text-[#F2EDE3]/70 hover:text-[#F2EDE3] px-2.5 py-1 border border-[#F2EDE3]/20 hover:border-[#F2EDE3]"
             aria-label="Đóng bảng đo đạc"
           >
-            DONG [ESC]
+            ĐÓNG [ESC]
           </button>
         </div>
 
@@ -80,7 +80,7 @@ export default function DebugTelemetryModal() {
             {/* 1. Số lượt gọi ảnh */}
             <div className="p-3.5 bg-[#0D1826]/70 border border-[#F2EDE3]/10">
               <span className="font-mono text-[10px] uppercase tracking-wider text-[#F2EDE3]/60 block mb-1">
-                SO LUOT GOI ANH
+                SỐ LƯỢT GỌI ẢNH
               </span>
               <div className="font-mono text-2xl text-[#F2EDE3] font-medium">
                 {tryOnStats.soLuotGoiAnh}
@@ -93,7 +93,7 @@ export default function DebugTelemetryModal() {
             {/* 2. Thời gian chờ trung bình */}
             <div className="p-3.5 bg-[#0D1826]/70 border border-[#F2EDE3]/10">
               <span className="font-mono text-[10px] uppercase tracking-wider text-[#F2EDE3]/60 block mb-1">
-                THOI GIAN CHO TB
+                THỜI GIAN CHỜ TB
               </span>
               <div className="font-mono text-2xl text-[#C39A27] font-medium">
                 {tryOnStats.thoiGianChoTrungBinhMs} ms
@@ -106,7 +106,7 @@ export default function DebugTelemetryModal() {
             {/* 3. Số lần rơi dự phòng */}
             <div className="p-3.5 bg-[#0D1826]/70 border border-[#F2EDE3]/10">
               <span className="font-mono text-[10px] uppercase tracking-wider text-[#F2EDE3]/60 block mb-1">
-                SO LAN ROI DU PHONG
+                SỐ LẦN RƠI DỰ PHÒNG
               </span>
               <div className="font-mono text-2xl text-[#A8322A] font-medium">
                 {tryOnStats.soLanDuPhong}
@@ -120,7 +120,7 @@ export default function DebugTelemetryModal() {
           {/* HÀNG 2: PHÂN RÃ DỰ PHÒNG BA TẦNG */}
           <div className="p-4 bg-[#0D1826]/50 border border-[#F2EDE3]/10">
             <span className="font-mono text-[10px] uppercase tracking-widest text-[#C39A27] block mb-2">
-              CHI TIET DU PHONG BA TANG
+              CHI TIẾT DỰ PHÒNG BA TẦNG
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 font-mono text-xs">
               <div className="p-2.5 bg-[#16243A] border border-[#F2EDE3]/10">
@@ -142,7 +142,7 @@ export default function DebugTelemetryModal() {
           <div className="p-4 bg-[#0D1826]/50 border border-[#F2EDE3]/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <span className="font-mono text-[10px] uppercase tracking-widest text-[#C39A27] block mb-1">
-                BO NHO DEM INDEXEDDB (TOI DA 20 ANH)
+                BỘ NHỚ ĐỆM INDEXEDDB (TỐI ĐA 20 ẢNH)
               </span>
               <p className="font-mono text-xs text-[#F2EDE3]/80">
                 Đang lưu trữ: <span className="text-[#F2EDE3] font-bold">{cacheCount} / 20</span> ảnh · Đã phục vụ từ cache: <span className="text-[#C39A27] font-bold">{tryOnStats.soLanTrungCache}</span> lần
@@ -157,14 +157,14 @@ export default function DebugTelemetryModal() {
               onClick={handleClearCache}
               className="font-mono text-xs px-3 py-1.5 border border-[#C39A27] text-[#C39A27] hover:bg-[#C39A27] hover:text-[#0D1826] transition-colors whitespace-nowrap"
             >
-              {justCleared ? 'DA DON DEP' : 'XOA BO NHO DEM'}
+              {justCleared ? 'ĐÃ DỌN DẸP' : 'XOÁ BỘ NHỚ ĐỆM'}
             </button>
           </div>
 
           {/* HÀNG 4: TOÀN BỘ CHỈ SỐ GEMINI CHUNG */}
           <div className="p-4 bg-[#0D1826]/30 border border-[#F2EDE3]/10 font-mono text-xs text-[#F2EDE3]/70 space-y-1">
             <span className="font-mono text-[10px] uppercase tracking-widest text-[#F2EDE3]/50 block mb-1">
-              TRANG THAI GEMINI CHUNG
+              TRẠNG THÁI GEMINI CHUNG
             </span>
             <div className="flex flex-wrap gap-x-4 gap-y-1">
               <span>Trạng thái: <strong className="text-[#F2EDE3] uppercase">{connectionStatus}</strong></span>

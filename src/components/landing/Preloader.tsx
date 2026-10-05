@@ -147,7 +147,8 @@ export default function Preloader({ onComplete }: PreloaderProps) {
       });
 
       // Tường lui đi, chỉ còn tấm vải trên khung
-      tl.to('.pl-chu', { y: -12, opacity: 0, duration: 0.4, stagger: 0.04, ease: 'power2.in' }, '+=0.15');
+      tl.addLabel('thoat', '+=0.15');
+      tl.to('.pl-chu', { y: -12, opacity: 0, duration: 0.4, stagger: 0.04, ease: 'power2.in' }, 'thoat');
       tl.to('.pl-tuong, .pl-thuoc', { opacity: 0, duration: 0.5, ease: 'power1.inOut' }, '<0.15');
 
       // Báo tiền sảnh mở màn. Hiện vật lộ dần từ dưới lên trong 1.3 giây sau 0.15 giây,
@@ -159,6 +160,23 @@ export default function Preloader({ onComplete }: PreloaderProps) {
       tl.to('.pl-vai', { clipPath: 'inset(0% -8% 100% -8%)', duration: 1.3, ease: 'power4.inOut' }, '>0.15');
       tl.set('.pl-vien', { opacity: 0 });
       tl.add(() => onComplete());
+
+      // Bấm chuột hoặc Esc, Enter, phím cách: bỏ qua phần dệt, đi thẳng tới đoạn kéo vải
+      const boQua = () => {
+        if (tl.time() < tl.labels.thoat) {
+          setHang(SO_HANG);
+          tl.seek('thoat').play();
+        }
+      };
+      const boQuaPhim = (e: KeyboardEvent) => {
+        if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') boQua();
+      };
+      root.addEventListener('click', boQua);
+      window.addEventListener('keydown', boQuaPhim);
+      return () => {
+        root.removeEventListener('click', boQua);
+        window.removeEventListener('keydown', boQuaPhim);
+      };
     }, root);
 
     return () => {
@@ -178,7 +196,7 @@ export default function Preloader({ onComplete }: PreloaderProps) {
       aria-valuemin={0}
       aria-valuemax={SO_HANG}
       aria-valuenow={hang}
-      className="fixed inset-0 z-[var(--z-preloader)] select-none text-[#2C2A26]"
+      className="fixed inset-0 z-[var(--z-preloader)] select-none text-[#2C2A26] cursor-pointer"
     >
       {/* Tường phòng trưng bày, cùng màu tường tiền sảnh để lúc lui đi không thấy mối nối */}
       <div className="pl-tuong absolute inset-0 bg-[#F2EDE3]">
@@ -216,6 +234,8 @@ export default function Preloader({ onComplete }: PreloaderProps) {
             <span>
               {String(hang).padStart(2, '0')} / {SO_HANG}
             </span>
+            <span className="text-[#2C2A26]/40">·</span>
+            <span>Bấm để bỏ qua</span>
           </div>
         </div>
       </div>

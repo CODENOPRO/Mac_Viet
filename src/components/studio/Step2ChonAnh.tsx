@@ -239,7 +239,7 @@ export default function Step2ChonAnh() {
       {/* Tiêu đề bước */}
       <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 border-b border-[#2C2A26]/15 pb-4">
         <div>
-          <span className="micro-label text-[#A8322A]">{formatStudioStepLabel(2, 'ANH CUA BAN')}</span>
+          <span className="micro-label text-[#A8322A]">{formatStudioStepLabel(2, 'ẢNH CỦA BẠN')}</span>
           <h2 className="font-display text-2xl md:text-3xl text-[#2C2A26] font-normal mt-1">
             Tải ảnh của bạn để đưa vào trung tâm Xưởng phối
           </h2>
@@ -410,7 +410,7 @@ export default function Step2ChonAnh() {
         >
           <div className="bg-[#FBF8F2] border border-[#2C2A26] w-full max-w-lg shadow-2xl p-6 md:p-8 animate-in fade-in duration-150">
             <span className="micro-label text-[#A8322A] block mb-1">
-              CAM KET QUYEN RIENG TU
+              CAM KẾT QUYỀN RIÊNG TƯ
             </span>
             <h3 className="font-display text-xl text-[#2C2A26] font-normal mb-4">
               Trước khi bạn tải ảnh chân dung lên
@@ -496,7 +496,7 @@ export default function Step2ChonAnh() {
           <div className="bg-[#FBF8F2] border border-[#2C2A26] w-full max-w-xl shadow-2xl p-6 flex flex-col gap-4 animate-in fade-in duration-150">
             <div className="flex items-center justify-between border-b border-[#2C2A26]/12 pb-3">
               <div>
-                <span className="micro-label text-[#A8322A]">CAN CHINH KHUNG HINH</span>
+                <span className="micro-label text-[#A8322A]">CĂN CHỈNH KHUNG HÌNH</span>
                 <h3 className="font-display text-lg text-[#2C2A26]">
                   Cắt ảnh về tỉ lệ 3:4 để lên dáng chuẩn
                 </h3>

@@ -360,7 +360,7 @@ export default function CompareLooksModal({
         {/* HEADER */}
         <div className="p-5 md:px-8 border-b border-[#2C2A26]/15 flex items-center justify-between bg-[#F2EDE3]">
           <div>
-            <span className="micro-label text-[#A8322A]">SO SANH DOI CHIEU</span>
+            <span className="micro-label text-[#A8322A]">SO SÁNH ĐỐI CHIẾU</span>
             <h2 className="font-display text-2xl md:text-3xl text-[#2C2A26] font-normal mt-0.5">
               So sánh các phương án phối
             </h2>

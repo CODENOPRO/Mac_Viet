@@ -83,7 +83,7 @@ export default function AiExplanationModal({ isOpen, onClose }: AiExplanationMod
               </span>
             </div>
             <p className="text-[11px] text-[#6E5439]">
-              Các đồ án mây tản, hoa sen hay bát bửu thời Lê — Nguyễn có quy thức tạo hình nghiêm cẩn. AI thường tạo các họa tiết phỏng theo nhưng thiếu tính xác thực lịch sử.
+              Các đồ án mây tản, hoa sen hay bát bửu thời Lê, thời Nguyễn có quy thức tạo hình nghiêm cẩn. AI thường tạo các họa tiết phỏng theo nhưng thiếu tính xác thực lịch sử.
             </p>
           </div>
 

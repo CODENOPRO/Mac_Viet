@@ -7,10 +7,10 @@ export default function StudioNavbar() {
   const liveStatus = getGeminiConnectionStatus();
 
   const navItems: { id: ScreenType; label: string }[] = [
-    { id: 'studio', label: 'XUONG PHOI' },
-    { id: 'culture_rules', label: 'LUAT VAN HOA' },
+    { id: 'studio', label: 'XƯỞNG PHỐI' },
+    { id: 'culture_rules', label: 'LUẬT VĂN HOÁ' },
     { id: 'lookbook', label: 'LOOKBOOK' },
-    { id: 'cu_nghe', label: 'CU NGHE' },
+    { id: 'cu_nghe', label: 'CỤ NGHỆ' },
   ];
 
   // Chấm trạng thái kết nối Gemini: xanh là sẵn sàng, vàng là cache, xám là dự phòng
@@ -29,20 +29,20 @@ export default function StudioNavbar() {
   const indicator = getGeminiIndicator();
 
   return (
-    <header className="h-[56px] bg-[#F2EDE3] text-[#2C2A26] border-b border-[#2C2A26]/18 sticky top-0 z-[var(--z-thanh-dieu-huong)] px-6 flex items-center justify-between select-none print:hidden">
-      {/* Trái: Chữ MAC VIET mono hoa bấm quay về landing */}
-      <div className="flex items-center gap-4">
+    <header className="md:h-[56px] bg-[#F2EDE3] text-[#2C2A26] border-b border-[#2C2A26]/18 sticky top-0 z-[var(--z-thanh-dieu-huong)] px-4 md:px-6 flex flex-wrap md:flex-nowrap items-center justify-between select-none print:hidden">
+      {/* Trái: Chữ MẶC VIỆT mono hoa bấm quay về landing */}
+      <div className="flex items-center gap-4 h-12 md:h-auto">
         <button
           type="button"
           onClick={() => store.setScreen('landing')}
           className="font-mono text-sm tracking-[0.2em] uppercase font-bold text-[#2C2A26] hover:text-[#A8322A] transition-colors cursor-pointer"
         >
-          MAC VIET
+          MẶC VIỆT
         </button>
       </div>
 
-      {/* Giữa: Bốn mục mono hoa: XUONG PHOI · BAO TANG · LOOKBOOK · CU NGHE */}
-      <nav className="flex items-center gap-6 md:gap-8 h-full">
+      {/* Giữa: Bốn mục mono hoa: XƯỞNG PHỐI · BAO TANG · LOOKBOOK · CỤ NGHỆ */}
+      <nav className="order-3 md:order-none w-full md:w-auto flex items-center justify-between md:justify-start gap-3 md:gap-8 h-11 md:h-full overflow-x-auto border-t border-[#2C2A26]/10 md:border-t-0 -mx-4 px-4 md:mx-0 md:px-0">
         {navItems.map((item) => {
           const isActive = currentScreen === item.id;
           return (
@@ -50,7 +50,7 @@ export default function StudioNavbar() {
               key={item.id}
               type="button"
               onClick={() => store.setScreen(item.id)}
-              className={`relative h-full flex items-center micro-label transition-colors cursor-pointer ${
+              className={`relative h-full flex items-center shrink-0 whitespace-nowrap micro-label max-md:tracking-[0.08em] transition-colors cursor-pointer ${
                 isActive ? 'text-[#2C2A26] font-bold' : 'text-[#2C2A26]/60 hover:text-[#2C2A26]'
               }`}
             >
@@ -65,7 +65,7 @@ export default function StudioNavbar() {
       </nav>
 
       {/* Phải: Chấm báo trạng thái Gemini */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 h-12 md:h-auto">
         {/* Chấm tròn báo trạng thái kết nối Gemini */}
         <div
           className="flex items-center gap-1.5 cursor-help"

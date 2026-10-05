@@ -153,12 +153,15 @@ async function goiModel<T>(params: {
 
   geminiStats.soLanGoi++;
 
-  // 1. Kiểm tra chế độ Demo
+  // 1. Chế độ Demo: chỉ dùng kết quả soạn sẵn cho gợi ý phối đồ, vốn không phụ thuộc món đang xem.
+  //    Các hàm còn lại (giải thích áo, kiểm tra văn hoá, đặt tên look) phải bám đúng món đang xem,
+  //    nên dùng đường dự phòng đọc từ dữ liệu thay vì một kết quả cố định cho mọi đầu vào.
   if (isDemoMode()) {
     geminiStats.soLanTrungCache++;
     geminiStats.lanCuoiTrangThai = 'cached';
     const demoData = (DEMO_RESPONSES as any)[tenHam];
-    if (demoData) return demoData as T;
+    if (demoData && tenHam === 'suggestOutfits') return demoData as T;
+    return duPhong();
   }
 
   // 2. Đọc Cache 7 ngày
@@ -725,7 +728,7 @@ export async function askCuNghe(
     `- NẾU DỮ LIỆU KHÔNG ĐỦ ĐỂ TRẢ LỜI, PHẢI NÓI THẲNG: "Cái này tôi chưa nắm chắc" rồi gợi ý mở mục Bảo tàng liên quan. TUYỆT ĐỐI CẤM BỊA ĐẶT KIẾN THỨC.`;
 
   const fallbackText =
-    `Chào bạn trẻ. Câu hỏi này tôi chưa nắm chắc từ tư liệu chuẩn, bạn có thể ghé mục Bảo Tàng của Mặc Việt để tra cứu các hiện vật cổ truyền chuẩn mực như Áo ngũ thân (G04), Áo tấc (G05) nhé!`;
+    `Chào bạn trẻ. Câu hỏi này tôi chưa nắm chắc từ tư liệu của app, bạn có thể tra trong mục Luật văn hoá hoặc phần hiện vật ở trang chính nhé.`;
 
   if (!ai) {
     geminiStats.soLanDuPhong++;
@@ -805,9 +808,10 @@ export async function nameAndCaption(
     `- hashtags: mảng hashtag tiếng Việt không dấu (ví dụ: ["macviet", "vietphuc"]).\n` +
     `- CẤM EMOJI trong mọi trường.`;
 
+  const tenAo = (look.thuongY?.ten || 'Việt phục').replace(/^Áo /, '');
   const fallback = (): NameAndCaptionResult => ({
-    tenLook: `${colorName} Phố`,
-    captionNgan: `Nét đĩnh đạc của tà ${look.thuongY?.ten || 'Việt phục'} giữa nhịp sống đương đại.`,
+    tenLook: `${colorName}, ${tenAo.toLowerCase()}`,
+    captionNgan: `Tà áo ${tenAo.toLowerCase()} sắc ${colorName.toLowerCase()}, mặc theo cách của người trẻ hôm nay.`,
     captionDai: `Một sớm bình yên cùng tà áo truyền thống mang sắc ${colorName}. Giữ gìn nếp mặc cổ truyền là cách người trẻ kết nối với cội nguồn văn hóa thiêng liêng.`,
     hashtags: ['macviet', 'vietphuc', 'cotruyen', 'diendoantrang'],
   });
@@ -958,6 +962,7 @@ export async function streamCuNgheTraLoi({
   onChunk,
   abortSignal,
   fallbackText,
+  mucLienQuan = [],
 }: {
   cauHoi: string;
   contextText: string;
@@ -965,6 +970,8 @@ export async function streamCuNgheTraLoi({
   onChunk: (chunk: string) => void;
   abortSignal?: AbortSignal;
   fallbackText?: string;
+  /** Các mục kho dữ liệu khớp câu hỏi, dùng để trả lời trung thực khi chưa có AI */
+  mucLienQuan?: Array<{ ten: string; moTa: string }>;
 }): Promise<string> {
   let fullResponse = '';
 
@@ -1032,10 +1039,17 @@ export async function streamCuNgheTraLoi({
     }
   }
 
-  // 2. Chế độ dự phòng tự nhiên: dùng câu trả lời mẫu sâu sắc
-  const defaultFallback =
-    fallbackText ||
-    'Chuyện áo mũ của ông cha mình sâu xa lắm bạn trẻ ạ. Mỗi nếp áo, đường kim đều gói ghém cả đạo làm người và sự tôn kính với tổ tiên [S01]. Bạn nên ghé qua xem thêm ở khu Bảo tàng để thấy trọn vẹn từng hiện vật nhé.';
+  // 2. Chưa có AI: câu gợi ý thì dùng lời đáp mẫu viết từ dữ liệu; câu tự do thì đọc thẳng các mục khớp trong kho
+  //    và nói rõ là chưa trò chuyện tự do được. Không trả lời chung chung, không gắn nguồn cho câu không có nội dung.
+  const docTuKho =
+    mucLienQuan.length > 0
+      ? 'Tôi chưa được kết nối để trò chuyện tự do, nên chỉ đọc cho bạn những gì kho của Mặc Việt có liên quan tới câu hỏi. ' +
+        mucLienQuan
+          .slice(0, 2)
+          .map((m) => `${m.ten}: ${m.moTa}`)
+          .join(' ')
+      : 'Tôi chưa được kết nối để trò chuyện tự do, và kho của Mặc Việt chưa có mục nào khớp với câu hỏi này, nên tôi xin không đoán.';
+  const defaultFallback = fallbackText || docTuKho;
 
   return runSimulatedStream(defaultFallback);
 }

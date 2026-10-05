@@ -2,8 +2,11 @@ import { useState } from 'react';
 import { useStore, store } from '../../lib/store';
 import { EVENTS } from '../../data/events';
 import { REGIONS } from '../../data/regions';
+import { GARMENTS } from '../../data/garments';
+
+const MA_VUNG: Record<string, RegionId> = { R01: 'bac', R02: 'trung', R03: 'nam', R04: 'tay_bac' };
 import { layTenMucTrangTrong } from '../../data/palettes';
-import { VaiTro, PhongCach, NganSach, formatStudioStepLabel } from '../../types';
+import { VaiTro, PhongCach, NganSach, RegionId, formatStudioStepLabel } from '../../types';
 
 export default function Step1BoiCanh() {
   const { contextSetup, selectedEvent, selectedRegion } = useStore();
@@ -182,6 +185,12 @@ export default function Step1BoiCanh() {
                       <span className="text-[11px] font-sans text-[#6E5439] block mt-0.5 truncate max-w-[200px]">
                         {r.khongGianVanHoa || r.chatLieu.slice(0, 2).join(' · ')}
                       </span>
+                      {/* Nói thẳng khi vùng chưa có hiện vật trong bộ sưu tập, thay vì để người dùng tưởng là có */}
+                      {!GARMENTS.some((g) => g.vung.includes(MA_VUNG[r.id] ?? (r.id as RegionId))) && (
+                        <span className="text-[11px] font-sans text-[#A8322A] block mt-1">
+                          Chưa có hồ sơ hiện vật riêng; Culture Guard chỉ áp dụng luật tôn trọng chỉnh thể trang phục.
+                        </span>
+                      )}
                     </div>
                     {/* Bảng màu nhỏ minh họa */}
                     <div className="relative z-10 flex items-center gap-1">

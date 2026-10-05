@@ -91,7 +91,7 @@ export default function BanDaChonPanel({ className = '', onOpenWhyModal }: BanDa
     <div className={`flex flex-col ${className}`}>
       {/* 2. DÒNG JETBRAINS MONO 11PX NGAY TRÊN KHỐI (QUY ĐỊNH BẮT BUỘC) */}
       <div className="font-mono text-[11px] text-[#A8322A] tracking-wider uppercase mb-1.5 font-medium leading-tight">
-        DAY LA BAN GHI CHINH XAC. ANH BEN CANH CHI LA MINH HOA.
+        ĐÂY LÀ BẢN GHI CHÍNH XÁC. ẢNH BÊN CẠNH CHỈ LÀ MINH HOẠ.
       </div>
 
       {/* 1. KHỐI BẠN ĐÃ CHỌN (ĐỌC TRỰC TIẾP TỪ LOOKSTATE, KHÔNG QUA GEMINI) */}

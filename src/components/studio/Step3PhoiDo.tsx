@@ -347,7 +347,7 @@ export default function Step3PhoiDo() {
                 </div>
               ) : !hasPhoto ? (
                 /* KHỐI TRỐNG TỈ LỆ 3:4 VIỀN ĐỨT NÉT KHI CHƯA CÓ ẢNH */
-                <div className="w-full h-full border-2 border-dashed border-[#2C2A26]/30 bg-[#F2EDE3]/50 flex flex-col items-center justify-center p-6 text-center gap-3">
+                <div className="w-full h-full border-2 border-dashed border-[#2C2A26]/25 bg-[#F2EDE3] flex flex-col items-center justify-center p-6 text-center gap-3">
                   <div className="w-16 h-20 border border-dashed border-[#2C2A26]/40 flex items-center justify-center bg-[#FBF8F2]/80">
                     <span className="font-mono text-[10px] text-[#6E5439] tracking-widest uppercase">3:4</span>
                   </div>
@@ -415,7 +415,7 @@ export default function Step3PhoiDo() {
                     isProcessing
                       ? 'bg-[#A8322A]/50 text-[#F2EDE3]/60 cursor-not-allowed'
                       : !hasPhoto
-                      ? 'bg-[#A8322A]/40 text-[#F2EDE3]/70 hover:bg-[#A8322A]/60'
+                      ? 'bg-transparent border border-[#A8322A] text-[#A8322A] hover:bg-[#A8322A] hover:text-[#F2EDE3]'
                       : 'bg-[#A8322A] text-[#F2EDE3] hover:bg-[#A8322A]/90 active:scale-[0.99]'
                   }`}
                   title={!hasPhoto ? 'Cần một tấm ảnh để mặc thử.' : ''}
@@ -423,7 +423,7 @@ export default function Step3PhoiDo() {
                   {isTryOnStale && activeTryOnImage && (
                     <span className="w-2 h-2 rounded-full bg-[#F2EDE3] animate-pulse" />
                   )}
-                  <span>{activeTryOnImage ? (isTryOnStale ? 'MẶC LẠI' : 'MẶC THỬ LẠI') : 'MẶC THỬ'}</span>
+                  <span>{activeTryOnImage ? (isTryOnStale ? 'MẶC LẠI' : 'MẶC THỬ LẠI') : hasPhoto ? 'MẶC THỬ' : 'THÊM ẢNH ĐỂ MẶC THỬ'}</span>
                 </button>
               </div>
 

@@ -11,6 +11,9 @@ import {
 import { streamCuNgheTraLoi } from '../../lib/gemini';
 import SourceTag from '../shared/SourceTag';
 
+// Mã nguồn như [S01] chỉ dùng để kiểm định; người đọc thấy tên nguồn ở dòng Nguồn bên dưới.
+const boMaNguon = (text: string) => text.replace(/\s*\[S\d{2}\]/g, '');
+
 export interface CuNgheMessage {
   id: string;
   role: 'user' | 'model';
@@ -166,6 +169,7 @@ export default function CuNgheScreen() {
         lichSu: last6Turns,
         abortSignal: abortController.signal,
         fallbackText,
+        mucLienQuan: ragResult.topItems.map((it) => ({ ten: it.ten, moTa: it.moTa })),
         onChunk: (chunk) => {
           accumulatedText += chunk;
           setMessages((prev) =>
@@ -180,8 +184,11 @@ export default function CuNgheScreen() {
       const audit = kiemDinhTraLoi(finalContent);
 
       // Nếu không có nguồn nào trích trực tiếp trong bài, bổ sung các nguồn từ RAG đã xác thực
+      const nguonMau = matchedSample
+        ? SOURCES.filter((s) => matchedSample.sourceIds.includes(s.id))
+        : [];
       const finalSources =
-        audit.sources.length > 0 ? audit.sources : ragResult.validSources;
+        audit.sources.length > 0 ? audit.sources : nguonMau.length > 0 ? nguonMau : ragResult.validSources;
 
       setMessages((prev) =>
         prev.map((msg) =>
@@ -204,7 +211,7 @@ export default function CuNgheScreen() {
             ? {
                 ...msg,
                 content:
-                  'Gió máy thất thường quá bạn trẻ ạ, câu này tôi để dành chỉ bạn sau nhé. Bạn có thể ghé qua gian Bảo tàng để xem thêm thư tịch cổ.',
+                  'Kết nối đang trục trặc, câu này tôi xin để dịp khác. Bạn có thể tra trong mục Luật văn hoá hoặc phần hiện vật ở trang chính.',
                 sources: ragResult.validSources,
               }
             : msg
@@ -240,7 +247,7 @@ export default function CuNgheScreen() {
           </div>
 
           <p className="text-xs md:text-sm font-sans text-[#6E5439] mt-2 max-w-xl leading-relaxed">
-            Hỏi đáp chậm rãi, mộc mạc từ đường kim mũi chỉ. Mọi câu trả lời đều được bảo vệ bằng kiến trúc đối chiếu thư tịch cổ chống bịa đặt.
+            Hỏi đáp chậm rãi, mộc mạc từ đường kim mũi chỉ. Cụ chỉ trả lời dựa trên kho dữ liệu của app và ghi nguồn dưới mỗi câu; câu nào kho chưa có, cụ nói thẳng là chưa nắm chắc.
           </p>
         </div>
 
@@ -303,7 +310,7 @@ export default function CuNgheScreen() {
               return (
                 <div key={msg.id} className="flex justify-end">
                   <div className="max-w-[85%] bg-[#F2EDE3] border border-[#2C2A26]/15 rounded-[2px] px-4 py-2.5 text-xs md:text-sm font-sans text-[#2C2A26] shadow-2xs">
-                    {msg.content}
+                    {boMaNguon(msg.content)}
                   </div>
                 </div>
               );
@@ -314,7 +321,7 @@ export default function CuNgheScreen() {
             return (
               <div key={msg.id} className="flex flex-col gap-2">
                 <div className="border-l-2 border-[#C39A27] pl-4 py-1 text-xs md:text-sm font-sans text-[#2C2A26] leading-relaxed">
-                  <span>{msg.content}</span>
+                  <span>{boMaNguon(msg.content)}</span>
                   {/* TRONG LÚC STREAM: CON TRỎ NHẤP NHÁY MẢNH Ở CUỐI DÒNG, CẤM BA CHẤM NHẢY */}
                   {isStreamingThis && (
                     <span
@@ -367,7 +374,7 @@ export default function CuNgheScreen() {
                 {/* DÒNG NHẮC MẢNH NẾU CÓ NĂM/TRIỀU ĐẠI MÀ CHƯA GẮN NGUỒN */}
                 {msg.canhBaoThieuNguon && (
                   <div className="ml-4 mt-1 font-mono text-[11px] text-[#6E5439] italic">
-                    * Phần này chưa gắn được nguồn cụ thể, bạn nên đối chiếu thêm ở mục Bảo tàng.
+                    * Phần này chưa gắn được nguồn cụ thể, bạn nên đối chiếu thêm trong mục Luật văn hoá.
                   </div>
                 )}
               </div>
@@ -421,8 +428,8 @@ export default function CuNgheScreen() {
               HỎI CỤ
             </button>
           </form>
-          <div className="pt-1.5 flex justify-between items-center text-[10px] font-mono text-[#6E5439]">
-            <span>Hệ thống RAG cục bộ đối chiếu 12 thư tịch cổ</span>
+          <div className="pt-1.5 flex flex-wrap justify-between items-center gap-x-4 gap-y-0.5 text-[10px] font-mono text-[#6E5439]">
+            <span>Đối chiếu với {SOURCES.length} nguồn của Mặc Việt</span>
             <span>Lưu tối đa 20 lượt gần nhất</span>
           </div>
         </div>

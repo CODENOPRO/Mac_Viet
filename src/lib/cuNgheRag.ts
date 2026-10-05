@@ -107,7 +107,7 @@ export function chayRagCucBo(cauHoi: string): RagResult {
         id: g.id,
         loai: 'garment',
         ten: g.ten,
-        moTa: `${g.moTaNgan}. Niên đại: ${g.nienDai}. Tên khác: ${g.tenKhac.join(', ') || 'không'}. Mặc khi: ${g.dungKhiNao.join(', ')}. Tránh khi: ${g.khongDungKhiNao.join(', ')}.`,
+        moTa: `${g.moTaNgan.replace(/\.$/, '')}. Niên đại: ${g.nienDai}. Tên khác: ${g.tenKhac.join(', ') || 'không'}. Mặc khi: ${g.dungKhiNao.join(', ')}. Tránh khi: ${g.khongDungKhiNao.join(', ')}.`,
         sourceIds: g.sourceIds,
         score,
       });
@@ -294,30 +294,32 @@ export function kiemDinhTraLoi(cauTraLoi: string): KiemDinhSauTraLoi {
  */
 export const CAU_HOI_GOI_Y = [
   'Áo ngũ thân và áo dài bây giờ khác nhau chỗ nào?',
-  'Đi lễ chùa thì nên tránh màu gì?',
+  'Đi lễ chùa thì nên mặc thế nào?',
   'Khăn vấn với khăn đóng có phải một thứ không?',
   'Tôi phối sneaker với áo tấc có được không?',
 ] as const;
 
+// Câu trả lời mẫu cho bốn câu gợi ý, dùng khi chưa kết nối AI.
+// Chỉ dùng thông tin có trong garments.ts và cultureRules.ts; mã nguồn khớp với mục đã dẫn.
 export const CAU_TRA_LOI_MAU: Record<string, { traLoi: string; sourceIds: string[] }> = {
   [CAU_HOI_GOI_Y[0]]: {
     traLoi:
-      'Bạn hỏi câu này trúng ngay vào cái gốc của nghề may nước mình đấy. Áo ngũ thân xưa có năm thân vải ghép lại: bốn thân ngoài tượng trưng cho tứ thân phụ mẫu (cha mẹ mình và cha mẹ người phối ngẫu), còn thân con giấu kín bên trong che chở người mặc, nhắc nhở giữ nếp nhà thanh bạch. Cổ áo đứng thẳng, cài năm chiếc cúc bên hữu [S01]. Còn áo dài tân thời bây giờ thường chỉ có hai tà trước sau, may chiết eo ôm sát theo vóc dáng phương Tây từ phong trào cải cách thời trang thập niên 1930 [S04]. Một đằng kín đáo mực thước che chở người mặc, một đằng tôn vinh đường cong cơ thể, nhìn qua thì thấy họ hàng gần nhưng cốt cách bên trong khác nhau nhiều lắm.',
-    sourceIds: ['S01', 'S04'],
+      'Hai chiếc áo là họ hàng gần đấy bạn trẻ. Áo ngũ thân có năm thân: bốn thân như áo tứ thân, thêm một thân con nằm khuất bên trong, cài năm khuy lệch bên hữu, ống tay chẽn gọn gàng [S01]. Dáng áo này gắn với chỉ dụ định chế y phục ở Đàng Trong năm 1744 [S02]. Áo dài tân thời thì đi ra từ cuộc cải cách thời trang thập niên 1930, kết cấu hai tà ôm gọn cơ thể, rồi được cải biên qua từng thế hệ [S07]. Người ta hay nói năm khuy ứng với năm đức nhân, lễ, nghĩa, trí, tín, nhưng đó là cách giải thích truyền lại, bạn nghe như một lời nhắc tu dưỡng thôi nhé.',
+    sourceIds: ['S01', 'S02', 'S07'],
   },
   [CAU_HOI_GOI_Y[1]]: {
     traLoi:
-      'Chốn thiền môn là nơi người ta tìm về thanh tịnh, nên phục sức cốt ở lòng thành kính và sự khiêm nhường. Bạn nên tránh mặc những màu quá rực rỡ chói chang như đỏ chót, vàng choé hoặc phối nhiều màu đối chọi gây tán loạn vẻ tôn nghiêm [S01]. Đặc biệt tránh xa các bộ đồ may hở cổ, ngắn tay hay bó sát. Người xưa đi lễ chuộng các sắc trầm mặc như màu lam khói, màu nâu sồng của đất, hoặc sắc ngà và the đen [S11]. Vải vóc nền nã, đường kim kín đáo thì tâm mới tĩnh được bạn ạ.',
-    sourceIds: ['S01', 'S11'],
+      'Đi lễ chùa, đền thì cái cốt là kín đáo, trang nghiêm. Bộ luật của app nhắc rằng chỉ mặc yếm hay đồ hở vai vào chốn thờ tự sẽ làm vơi sự tôn nghiêm [S10]. Lời nhắc này dựa trên cách cộng đồng phục dựng đang mặc hiện nay, chưa phải quy định trong sử liệu, nên bạn coi là lời khuyên. Còn nên tránh màu nào thì tư liệu của tôi chưa có gì chắc chắn, tôi không dám nói bừa.',
+    sourceIds: ['S10'],
   },
   [CAU_HOI_GOI_Y[2]]: {
     traLoi:
-      'Nhiều bạn trẻ bây giờ hay gọi lẫn, nhưng thật ra là hai lối phục sức khác nhau đấy. Khăn vấn là dải vải the hoặc nhung dài, bọc lấy nếp tóc rồi quấn từng vòng quanh đầu một cách thủ công. Mỗi lần vấn là một lần người mặc tự tay nắn nếp, vành khăn ôm mềm mại và tôn lên khuôn mặt [S01]. Còn khăn đóng, hay còn gọi là khăn xếp, là loại may sẵn trên cốt cứng định hình với các nếp xếp đều chằn chặn, xuất hiện phổ biến vào cuối triều Nguyễn và đầu thế kỷ 20 để tiện đội nhanh [S04]. Khăn vấn thì có hồn của sự thủ công mềm mại, còn khăn đóng thì tề chỉnh, nghiêm trang của sự điển chế.',
-    sourceIds: ['S01', 'S04'],
+      'Không phải đâu, hai thứ khác nhau đấy. Khăn vấn là một dải vải the, lụa hoặc nhiễu, quấn tay tại chỗ quanh mái tóc đã búi, mỗi lần quấn lại khác đôi chút, phổ biến từ thế kỷ 18 tới đầu thế kỷ 20 [S01]. Khăn đóng là phiên bản may sẵn: nếp the được xếp đều rồi khâu định hình thành vành tròn cứng, chỉ việc đội lên, phổ biến từ cuối thế kỷ 19 [S01]. Một cái quấn tay, một cái may sẵn, khác nhau ở chỗ đó.',
+    sourceIds: ['S01'],
   },
   [CAU_HOI_GOI_Y[3]]: {
     traLoi:
-      'Áo tấc vốn là lễ phục tay thụng buông dài rộng rãi một tấc, dùng trong các đại lễ tôn nghiêm như tế tự gia tiên hay cưới hỏi [S01]. Giày sneaker là biểu tượng của sự năng động, bước nhanh trên phố xá hiện đại. Hai thứ này nếu đem ghép vào nhau ở chốn thờ tự hay nghi lễ gia đình thì chẳng khác nào người đang nghiêm cẩn thắp hương mà chân lại muốn chạy đua, làm giảm đi vẻ uy nghiêm mực thước [S03]. Nếu bạn đi dạo phố, chụp ảnh phong cách thể nghiệm đường phố thì có thể coi là một sáng tạo trẻ trung, nhưng khi vào chốn lễ nghi thì một đôi hài thêu hay guốc mộc mộc mạc mới là mảnh ghép trọn vẹn nhất.',
-    sourceIds: ['S01', 'S03'],
+      'Áo tấc là lễ phục năm thân tay thụng, gắn với lễ gia tiên và cưới hỏi trang trọng hơn là đời sống thường ngày [S01]. Đi giày thể thao với áo tấc ở lễ giỗ, lễ gia tiên thì bộ luật của app sẽ nhắc nhẹ, vì trong không gian thờ tự nó làm vơi nét cung kính [S10]. Lời nhắc này dựa trên thực hành hiện nay chứ không phải quy định sử liệu. Còn đi dạo phố, chụp ảnh thể nghiệm thì là chuyện sáng tạo của bạn.',
+    sourceIds: ['S01', 'S10'],
   },
 };

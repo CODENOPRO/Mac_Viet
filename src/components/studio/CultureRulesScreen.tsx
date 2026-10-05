@@ -129,15 +129,15 @@ export default function CultureRulesScreen() {
         <header className="flex flex-col gap-4 border-b border-[#2C2A26]/18 pb-8">
           <div className="flex items-center justify-between">
             <span className="font-mono text-xs text-[#A8322A] tracking-[0.2em] uppercase font-bold">
-              HE THONG CULTURE GUARD
+              HỆ THỐNG CULTURE GUARD
             </span>
             <span className="font-mono text-xs text-[#6E5439] uppercase tracking-wider">
-              20 QUY THỨC DI SẢN
+              {CULTURE_RULES.length} QUY THỨC DI SẢN
             </span>
           </div>
 
           <h1 className="font-display text-3xl md:text-4xl text-[#2C2A26] font-medium leading-tight">
-            20 Luật Văn Hóa Phục Trang
+            {CULTURE_RULES.length} luật văn hoá trang phục
           </h1>
 
           {/* 3 CÂU DẪN NGUYÊN TẮC (YÊU CẦU BẮT BUỘC SỐ 5) */}
@@ -222,7 +222,7 @@ export default function CultureRulesScreen() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm theo tên, mã luật, từ khoá..."
+              placeholder="Tìm theo tên luật hoặc từ khoá..."
               className="w-full px-3 py-1.5 pr-8 bg-[#F2EDE3] border border-[#2C2A26]/20 text-xs font-sans text-[#2C2A26] placeholder-[#6E5439]/60 focus:outline-hidden focus:border-[#2C2A26]"
             />
             {searchQuery ? (

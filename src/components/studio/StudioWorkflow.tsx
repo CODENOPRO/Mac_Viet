@@ -9,9 +9,9 @@ export default function StudioWorkflow() {
   const { studioStep } = useStore();
 
   const steps: { id: StudioStep; label: string; sub: string }[] = [
-    { id: 1, label: 'BOI CANH', sub: 'Chọn nghi lễ, không gian' },
-    { id: 2, label: 'ANH CUA BAN', sub: 'Tải ảnh chân dung' },
-    { id: 3, label: 'XUONG PHOI', sub: 'Chọn 6 lớp & mặc thử' },
+    { id: 1, label: 'BỐI CẢNH', sub: 'Chọn nghi lễ, không gian' },
+    { id: 2, label: 'ẢNH CỦA BẠN', sub: 'Tải ảnh chân dung' },
+    { id: 3, label: 'XƯỞNG PHỐI', sub: 'Chọn 6 lớp & mặc thử' },
     { id: 4, label: 'LOOK CARD', sub: 'Kiểm tra luật & lưu look' },
   ];
 
@@ -25,7 +25,7 @@ export default function StudioWorkflow() {
   return (
     <div className="w-full flex flex-col">
       {/* Thanh tiến trình mảnh ở trên cao */}
-      <div className="w-full bg-[#F2EDE3] border-b border-[#2C2A26]/15 px-6 py-3 select-none">
+      <div className="w-full bg-[#F2EDE3] border-b border-[#2C2A26]/15 px-4 md:px-6 py-3 select-none">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           {steps.map((s, idx) => {
             const isCurrent = studioStep === s.id;
@@ -33,7 +33,7 @@ export default function StudioWorkflow() {
             const isFuture = studioStep < s.id;
 
             return (
-              <div key={s.id} className="flex items-center gap-3">
+              <div key={s.id} className={`flex items-center gap-2 md:gap-3 ${isCurrent ? 'min-w-0' : 'shrink-0'}`}>
                 <button
                   type="button"
                   onClick={() => handleStepClick(s.id)}
@@ -55,9 +55,9 @@ export default function StudioWorkflow() {
                   >
                     0{s.id}
                   </span>
-                  <div>
+                  <div className={isCurrent ? 'block min-w-0' : 'hidden md:block'}>
                     <span
-                      className={`micro-label block ${
+                      className={`micro-label block whitespace-nowrap ${
                         isCurrent ? 'text-[#A8322A] font-bold' : 'text-[#2C2A26]'
                       }`}
                     >
@@ -71,7 +71,7 @@ export default function StudioWorkflow() {
 
                 {/* Dấu phân cách giữa các bước */}
                 {idx < steps.length - 1 && (
-                  <div className="w-8 md:w-16 h-[1px] bg-[#2C2A26]/18 mx-1 md:mx-2" />
+                  <div className="w-3 sm:w-8 md:w-16 h-[1px] bg-[#2C2A26]/18 mx-0.5 md:mx-2 shrink-0" />
                 )}
               </div>
             );

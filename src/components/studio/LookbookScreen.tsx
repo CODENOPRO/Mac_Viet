@@ -320,7 +320,7 @@ export default function LookbookScreen() {
 
                     {/* Nhãn mono nhỏ MAU góc trên */}
                     <span className="font-mono text-[10px] tracking-wider px-1.5 py-0.5 border border-[#C39A27]/60 text-[#C39A27] bg-[#C39A27]/10 uppercase font-semibold">
-                      MAU
+                      MẪU
                     </span>
                   </div>
 

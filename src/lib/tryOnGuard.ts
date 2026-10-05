@@ -316,7 +316,7 @@ export async function exportLookCardPoster(opts: {
     ctx.fillStyle = '#A8322A';
     ctx.font = '14px "JetBrains Mono", monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('MAC VIET · VIETNAMESE ATTIRE ARCHIVE', posterW / 2, 85);
+    ctx.fillText('MẶC VIỆT · PHÒNG TRƯNG BÀY VIỆT PHỤC', posterW / 2, 85);
 
     ctx.fillStyle = '#16243A';
     ctx.font = 'normal 42px "Fraunces", Georgia, serif';

@@ -137,14 +137,15 @@ export default function Step3LookCard() {
   // 2. TÊN 6 LỚP ĐANG MẶC (DƯỚI KHỐI ẢNH)
   // ---------------------------------------------------------------------------
   const sixLayersText = useMemo(() => {
+    // Chỉ liệt kê món người dùng đã chọn, không tự điền món họ chưa chọn
     const layers = [
-      lookState.thuongY?.ten || 'Áo ngũ thân',
-      lookState.haY?.ten || 'Quần lụa trắng',
-      lookState.thuPhuc?.ten || 'Khăn vấn',
-      lookState.hai?.ten || 'Hài nhung',
-      lookState.phuKien?.[0]?.ten || (lookState.phuKienHienDai ? 'Phụ kiện hiện đại' : 'Thẻ bài / Quạt'),
-      lookState.hoaVan?.ten || 'Trơn không thêu',
-    ];
+      lookState.thuongY?.ten,
+      lookState.haY?.ten,
+      lookState.thuPhuc?.ten,
+      lookState.hai?.ten,
+      lookState.phuKien?.[0]?.ten || (lookState.phuKienHienDai ? 'Phụ kiện hiện đại' : undefined),
+      lookState.hoaVan?.ten,
+    ].filter(Boolean);
     return layers.join(' · ');
   }, [lookState]);
 
@@ -233,9 +234,8 @@ export default function Step3LookCard() {
         if (isMounted) {
           setStoryData({
             cauChuyen:
-              lookState.thuongY?.cauChuyen ||
-              'Áo ngũ thân đại diện cho nét trang nhã, tề chỉnh của người Việt. Với kết cấu năm thân và năm cúc, tà áo tượng trưng cho đạo lý ngũ thường và sự gắn kết gia đình truyền thống.',
-            nienDaiNoiBat: lookState.thuongY?.nienDai || 'Thế kỷ XVIII — XIX',
+              lookState.thuongY?.cauChuyen || 'Chưa có câu chuyện cho món này trong dữ liệu.',
+            nienDaiNoiBat: lookState.thuongY?.nienDai || 'Chưa xác định',
             aiTungMac: lookState.thuongY?.dungKhiNao.join(', ') || 'Sĩ phu, nhân dân trong các dịp lễ tết và giao tế',
             yNghiaHoaVan: 'Hoa văn thanh nhã theo quy thức cổ truyền.',
             sourceIds: lookState.thuongY?.sourceIds || ['S01', 'S03'],
@@ -696,7 +696,7 @@ export default function Step3LookCard() {
               ----------------------------------------------------------------- */}
           <div className="py-7 flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <span className="micro-label text-[#A8322A]">CHUYEN CUA TA AO</span>
+              <span className="micro-label text-[#A8322A]">CHUYỆN CỦA TÀ ÁO</span>
 
               {/* NHÃN ĐỘ CHẮC CHẮN DẠNG VIÊN THUỐC VIỀN MẢNH */}
               <span
@@ -787,7 +787,7 @@ export default function Step3LookCard() {
 
           {/* -----------------------------------------------------------------
               KHỐI 4 — HÀNH ĐỘNG
-              HÀNG NĂM NÚT: SO SANH · LUU VAO LOOKBOOK · THU TREN ANH · XUAT POSTER · CHIA SE
+              HÀNG NĂM NÚT: SO SÁNH · LƯU VÀO LOOKBOOK · THỬ TRÊN ẢNH · XUẤT POSTER · CHIA SẺ
               ----------------------------------------------------------------- */}
           <div className="pt-7">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
@@ -797,7 +797,7 @@ export default function Step3LookCard() {
                 onClick={() => setModalCompareOpen(true)}
                 className="px-3 py-3 bg-[#A8322A] text-[#F2EDE3] font-mono text-xs uppercase tracking-wider hover:bg-[#A8322A]/90 transition-colors text-center cursor-pointer rounded-[1px]"
               >
-                SO SANH
+                SO SÁNH
               </button>
 
               {/* Nút 2: LƯU VÀO LOOKBOOK */}
@@ -806,7 +806,7 @@ export default function Step3LookCard() {
                 onClick={handleSaveLookbook}
                 className="px-3 py-3 border border-[#2C2A26]/30 text-[#2C2A26] font-mono text-xs uppercase tracking-wider hover:border-[#2C2A26] hover:bg-[#2C2A26]/5 transition-colors text-center cursor-pointer rounded-[1px]"
               >
-                LUU VAO LOOKBOOK
+                LƯU VÀO LOOKBOOK
               </button>
 
               {/* Nút 3: THỬ TRÊN ẢNH */}
@@ -815,7 +815,7 @@ export default function Step3LookCard() {
                 onClick={() => setModalTryOnOpen(true)}
                 className="px-3 py-3 border border-[#2C2A26]/30 text-[#2C2A26] font-mono text-xs uppercase tracking-wider hover:border-[#2C2A26] hover:bg-[#2C2A26]/5 transition-colors text-center cursor-pointer rounded-[1px]"
               >
-                THU TREN ANH
+                THỬ TRÊN ẢNH
               </button>
 
               {/* Nút 4: XUẤT POSTER */}
@@ -824,7 +824,7 @@ export default function Step3LookCard() {
                 onClick={() => setModalPosterOpen(true)}
                 className="px-3 py-3 border border-[#2C2A26]/30 text-[#2C2A26] font-mono text-xs uppercase tracking-wider hover:border-[#2C2A26] hover:bg-[#2C2A26]/5 transition-colors text-center cursor-pointer rounded-[1px]"
               >
-                XUAT POSTER
+                XUẤT POSTER
               </button>
 
               {/* Nút 5: CHIA SẺ */}
@@ -833,7 +833,7 @@ export default function Step3LookCard() {
                 onClick={handleShare}
                 className="px-3 py-3 border border-[#2C2A26]/30 text-[#2C2A26] font-mono text-xs uppercase tracking-wider hover:border-[#2C2A26] hover:bg-[#2C2A26]/5 transition-colors text-center cursor-pointer rounded-[1px]"
               >
-                CHIA SE
+                CHIA SẺ
               </button>
             </div>
           </div>
@@ -858,7 +858,7 @@ export default function Step3LookCard() {
           <div className="bg-[#FBF8F2] border border-[#2C2A26] w-full max-w-2xl max-h-[85vh] overflow-y-auto p-6 md:p-8 flex flex-col gap-6 shadow-2xl rounded-[1px]">
             <div className="flex items-center justify-between border-b border-[#2C2A26]/15 pb-4">
               <div>
-                <span className="micro-label text-[#A8322A]">TRA CUU DI SAN</span>
+                <span className="micro-label text-[#A8322A]">TRA CỨU DI SẢN</span>
                 <h3 className="font-display text-2xl text-[#2C2A26] mt-0.5">
                   Tư liệu tham chiếu văn hiến
                 </h3>
@@ -868,7 +868,7 @@ export default function Step3LookCard() {
                 onClick={() => setModalSourceOpen(false)}
                 className="font-mono text-xs text-[#2C2A26] hover:text-[#A8322A] px-2 py-1 border border-[#2C2A26]/20 cursor-pointer"
               >
-                DONG [ESC]
+                ĐÓNG [ESC]
               </button>
             </div>
 
@@ -905,7 +905,7 @@ export default function Step3LookCard() {
                 onClick={() => setModalSourceOpen(false)}
                 className="px-6 py-2 bg-[#2C2A26] text-[#F2EDE3] font-mono text-xs uppercase tracking-wider hover:bg-[#16243A] cursor-pointer"
               >
-                HOAN TAT
+                HOÀN TẤT
               </button>
             </div>
           </div>
@@ -913,7 +913,7 @@ export default function Step3LookCard() {
       )}
 
       {/* =====================================================================
-          MODAL 2: SO SÁNH CÁC PHƯƠNG ÁN PHỐI (SO SANH)
+          MODAL 2: SO SÁNH CÁC PHƯƠNG ÁN PHỐI (SO SÁNH)
           ===================================================================== */}
       <CompareLooksModal
         isOpen={modalCompareOpen}
@@ -921,7 +921,7 @@ export default function Step3LookCard() {
       />
 
       {/* =====================================================================
-          MODAL 3: THỬ TRÊN ẢNH / CHỌN NHÂN VẬT ĐẠI DIỆN (THU TREN ANH)
+          MODAL 3: THỬ TRÊN ẢNH / CHỌN NHÂN VẬT ĐẠI DIỆN (THỬ TRÊN ẢNH)
           ===================================================================== */}
       <TryOnModal
         isOpen={modalTryOnOpen}
@@ -936,14 +936,14 @@ export default function Step3LookCard() {
       />
 
       {/* =====================================================================
-          MODAL 4: XUẤT POSTER TRIỂN LÃM (XUAT POSTER)
+          MODAL 4: XUẤT POSTER TRIỂN LÃM (XUẤT POSTER)
           ===================================================================== */}
       {modalPosterOpen && (
         <div className="fixed inset-0 z-50 bg-[#0D1826]/85 flex items-center justify-center p-4">
           <div className="bg-[#FBF8F2] border border-[#2C2A26] w-full max-w-xl max-h-[90vh] overflow-y-auto p-8 flex flex-col gap-6 shadow-2xl rounded-[1px]">
             <div className="flex items-center justify-between border-b border-[#2C2A26]/15 pb-4">
               <div>
-                <span className="micro-label text-[#A8322A]">BAN IN DI SAN</span>
+                <span className="micro-label text-[#A8322A]">BẢN IN DI SẢN</span>
                 <h3 className="font-display text-2xl text-[#2C2A26] mt-0.5">
                   Poster Thư Tịch Mặc Việt
                 </h3>
@@ -953,14 +953,14 @@ export default function Step3LookCard() {
                 onClick={() => setModalPosterOpen(false)}
                 className="font-mono text-xs text-[#2C2A26] hover:text-[#A8322A] px-2 py-1 border border-[#2C2A26]/20 cursor-pointer"
               >
-                DONG [ESC]
+                ĐÓNG [ESC]
               </button>
             </div>
 
             {/* Khung Poster thu nhỏ */}
             <div className="border-4 border-[#16243A] p-6 bg-[#F2EDE3] flex flex-col gap-4 items-center text-center">
               <span className="font-mono text-[10px] tracking-widest uppercase text-[#A8322A]">
-                MAC VIET · VIETNAMESE ATTIRE ARCHIVE
+                MẶC VIỆT · PHÒNG TRƯNG BÀY VIỆT PHỤC
               </span>
               <h4 className="font-display text-3xl text-[#16243A]">
                 {nameData?.tenLook || 'Chàm Phố Đoan Trang'}
