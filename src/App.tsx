@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { useStore } from './lib/store';
 import { ScrollTrigger } from './lib/gsap';
 import Preloader from './components/landing/Preloader';
@@ -13,6 +13,21 @@ import DebugTelemetryModal from './components/shared/DebugTelemetryModal';
 export default function App() {
   const { currentScreen } = useStore();
   const [isPreloaded, setIsPreloaded] = useState(false);
+  const [lanMoMan, setLanMoMan] = useState(0);
+  const manTruocRef = useRef(currentScreen);
+
+  // Quay lại landing từ màn khác: về đầu trang và dệt lại khung cửi, để tiền sảnh mở màn như lúc mới vào.
+  // Chạy trong layout effect nên màn chờ phủ lên trước khi trình duyệt kịp vẽ tiền sảnh còn trống.
+  useLayoutEffect(() => {
+    const manTruoc = manTruocRef.current;
+    manTruocRef.current = currentScreen;
+    if (currentScreen === 'landing' && manTruoc !== 'landing') {
+      if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
+      window.scrollTo(0, 0);
+      setIsPreloaded(false);
+      setLanMoMan((n) => n + 1);
+    }
+  }, [currentScreen]);
 
   const isStudioWorld = currentScreen !== 'landing';
 
@@ -33,6 +48,7 @@ export default function App() {
       {/* Màn 0: Preloader điện ảnh che toàn màn cho đến khi sẵn sàng */}
       {!isPreloaded && (
         <Preloader
+          key={lanMoMan}
           onComplete={() => {
             setIsPreloaded(true);
             // Báo cho tiền sảnh bắt đầu mở màn
