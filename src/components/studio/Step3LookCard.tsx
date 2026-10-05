@@ -487,8 +487,8 @@ export default function Step3LookCard() {
   // ---------------------------------------------------------------------------
   // RENDER CHÍNH — BỐ CỤC 12 CỘT
   // ---------------------------------------------------------------------------
-  // Ảnh AI chỉ hiện khi có cả ảnh người dùng; nhãn AI và nút dựng lại theo đúng điều kiện này.
-  const dangHienAnhAI = Boolean(isAiImage && (activeTryOnImage || aiImageUrl) && userPhoto);
+  // Có ảnh mặc thử thật là hiện, kể cả khi mở lại từ Lookbook và không còn ảnh gốc của người dùng.
+  const dangHienAnhAI = Boolean(activeTryOnImage || (isAiImage && aiImageUrl));
 
   return (
     <div className="w-full flex flex-col gap-6 select-none animate-in fade-in duration-200">

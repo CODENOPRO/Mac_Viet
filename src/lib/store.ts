@@ -13,6 +13,8 @@ import {
   StudioStep,
 } from '../types';
 import { EVENTS } from '../data/events';
+import { MOTIFS } from '../data/motifs';
+import { luuAnhLook, docAnhLook, xoaAnhLook } from './anhLookbook';
 import { GARMENTS } from '../data/garments';
 import { REGIONS } from '../data/regions';
 import { CULTURE_RULES } from '../data/cultureRules';
@@ -478,6 +480,8 @@ export const store = {
   },
 
   saveToLookbook(ten: string, ghiChu?: string) {
+    // Ảnh mặc thử chỉ lưu kèm khi còn khớp với bộ đồ (chưa đổi món sau lần mặc thử)
+    const anh = state.activeTryOnImage && !state.isTryOnStale ? state.activeTryOnImage : null;
     const newLookCard: LookCardData = {
       id: `look-${Date.now()}`,
       ten: ten.trim() || 'Bộ Phối Mặc Việt',
@@ -485,7 +489,9 @@ export const store = {
       eventContextId: state.selectedEvent.id,
       look: { ...state.lookState },
       ghiChu: ghiChu || state.selectedEvent.ten,
+      coAnh: Boolean(anh),
     };
+    if (anh) void luuAnhLook(newLookCard.id, anh);
     const updated = [newLookCard, ...state.lookbook];
     state = {
       ...state,
@@ -513,7 +519,53 @@ export const store = {
     emitChange();
   },
 
+  /**
+   * Mở lại một bộ đã lưu: khôi phục đủ sáu lớp, màu, dịp, và gắn lại ảnh mặc thử cũ nếu có,
+   * để app không gọi Gemini dựng ảnh mới. Món đồ được đọc lại theo id từ dữ liệu hiện tại.
+   */
+  moLaiLook(item: LookCardData) {
+    const timAo = (g?: Garment | null) => (g ? GARMENTS.find((x) => x.id === g.id) || g : null);
+    const look: LookState = {
+      ...item.look,
+      thuongY: timAo(item.look.thuongY),
+      haY: timAo(item.look.haY),
+      thuPhuc: timAo(item.look.thuPhuc),
+      hai: timAo(item.look.hai),
+      phuKien: (item.look.phuKien || []).map((g) => timAo(g)).filter((g): g is Garment => Boolean(g)),
+      hoaVan: item.look.hoaVan ? MOTIFS.find((m) => m.id === item.look.hoaVan?.id) || item.look.hoaVan : null,
+    };
+    const dip = EVENTS.find((e) => e.id === item.eventContextId) || state.selectedEvent;
+    state = {
+      ...state,
+      lookState: look,
+      selectedEvent: dip,
+      contextSetup: { ...state.contextSetup, eventId: dip.id },
+      activeTryOnImage: null,
+      lastTriedLook: null,
+      isTryOnStale: false,
+      studioStep: 3,
+    };
+    pushHistory(look);
+    store.setScreen('studio');
+
+    if (item.coAnh) {
+      void docAnhLook(item.id).then((anh) => {
+        // Chỉ gắn ảnh nếu người dùng chưa đổi sang bộ khác trong lúc chờ đọc
+        if (!anh || state.lookState !== look) return;
+        state = {
+          ...state,
+          activeTryOnImage: anh,
+          lastTriedLook: { ...look },
+          isTryOnStale: false,
+          tryOnHistory: [anh, ...state.tryOnHistory.filter((i) => i !== anh)].slice(0, 6),
+        };
+        emitChange();
+      });
+    }
+  },
+
   deleteFromLookbook(id: string) {
+    void xoaAnhLook(id);
     const updated = state.lookbook.filter((item) => item.id !== id);
     state = {
       ...state,

@@ -209,4 +209,6 @@ export interface LookCardData {
   look: LookState;
   eventContextId?: string;
   ghiChu?: string;
+  /** Có ảnh mặc thử lưu kèm trong IndexedDB (xem lib/anhLookbook.ts) */
+  coAnh?: boolean;
 }

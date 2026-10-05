@@ -5,6 +5,27 @@ import { EVENTS } from '../../data/events';
 import { SAMPLE_LOOKS } from '../../data/sampleLooks';
 import { layTenMau } from '../../data/palettes';
 import { LookCardData } from '../../types';
+import { docAnhLook } from '../../lib/anhLookbook';
+
+// Ảnh mặc thử đã lưu kèm bộ đồ, đọc từ IndexedDB
+function AnhDaLuu({ idLook, ten }: { idLook: string; ten: string }) {
+  const [anh, setAnh] = useState<string | null>(null);
+  useEffect(() => {
+    let conDung = true;
+    docAnhLook(idLook).then((a) => conDung && setAnh(a));
+    return () => {
+      conDung = false;
+    };
+  }, [idLook]);
+  if (!anh) return null;
+  return (
+    <img
+      src={anh}
+      alt={`Ảnh mặc thử của bộ ${ten}`}
+      className="w-full aspect-[4/3] object-cover object-top mt-3 border border-[#2C2A26]/12"
+    />
+  );
+}
 
 export default function LookbookScreen() {
   const { lookbook, selectedEvent } = useStore();
@@ -189,6 +210,8 @@ export default function LookbookScreen() {
                       </div>
                     </div>
 
+                    {item.coAnh && <AnhDaLuu idLook={item.id} ten={item.ten} />}
+
                     <div className="flex items-start justify-between gap-3 mt-3">
                       <h4 className="font-display text-2xl text-[#2C2A26] font-normal">
                         {item.ten}
@@ -253,13 +276,7 @@ export default function LookbookScreen() {
                   <div className="pt-4 mt-4 border-t border-[#2C2A26]/10 flex items-center justify-end">
                     <button
                       type="button"
-                      onClick={() => {
-                        store.setThuongY(item.look.thuongY || null);
-                        store.setHaY(item.look.haY || null);
-                        store.setThuPhuc(item.look.thuPhuc || null);
-                        store.setStudioStep(3);
-                        store.setScreen('studio');
-                      }}
+                      onClick={() => store.moLaiLook(item)}
                       className="font-mono text-xs uppercase text-[#A8322A] hover:underline cursor-pointer"
                     >
                       XEM LẠI TRONG XƯỞNG →
@@ -385,13 +402,7 @@ export default function LookbookScreen() {
 
                   <button
                     type="button"
-                    onClick={() => {
-                      store.setThuongY(sample.look.thuongY || null);
-                      store.setHaY(sample.look.haY || null);
-                      store.setThuPhuc(sample.look.thuPhuc || null);
-                      store.setStudioStep(3);
-                      store.setScreen('studio');
-                    }}
+                    onClick={() => store.moLaiLook(sample)}
                     className="font-mono text-xs uppercase text-[#6E5439] hover:text-[#A8322A] text-right cursor-pointer pt-1"
                   >
                     XEM LẠI TRONG XƯỞNG →
