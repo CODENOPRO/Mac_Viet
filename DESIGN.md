@@ -32,6 +32,7 @@ JetBrains Mono cho biển chú thích bảo tàng: tên, niên đại, chất li
 | `/anh/tl-ba-ba-bt.jpg` | áo bà ba đen, khăn rằn trên ma-nơ-canh | 1920 x 2880 | dùng lớn, giữ nguyên màu | Daderot, Bảo tàng Phụ nữ Việt Nam, CC0 |
 | `/anh/tl-hai-phong-1904.jpg` | bưu thiếp hai phụ nữ áo ngũ thân, Hải Phòng | 360 x 450 | tờ tư liệu ghim tường, không phóng to | Pierre Dieulefils, 1904, Phạm vi công cộng |
 | `/anh/tl-van-toc.jpg` | thiếu nữ Bắc Kỳ đội nón quai thao | 420 x 600 | tờ tư liệu ghim tường, không phóng to | Tư liệu lịch sử, Wikimedia Commons, Phạm vi công cộng |
+| `/anh/tl-nhat-binh-nam-phuong.jpg` | Hoàng hậu Nam Phương mặc áo Nhật Bình, khăn vành dây | 1000 x 1500 | tờ tư liệu ghim tường, không phóng to | Không rõ tác giả, trước 1945, qua Wikimedia Commons |
 
 Hiện vật nào chưa có ảnh: thiết kế một tấm biển chú thích lớn, đẹp, có chủ đích. Không vẽ hình minh hoạ, không dùng ô trống.
 
