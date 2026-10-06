@@ -1,6 +1,7 @@
 import { CultureRule, LookState, EventContext } from '../types';
 import { GARMENTS } from './garments';
 import { MOTIFS } from './motifs';
+import { mauHaY, mauThuPhuc, cungMau } from '../lib/mauLook';
 
 /**
  * Luật đã viết sẵn nhưng chưa chạy được: chúng xét các món trang phục dân tộc thiểu số, mà kho hiện vật
@@ -15,9 +16,10 @@ export const CULTURE_RULES: CultureRule[] = [
     ten: 'Phẩm phục Nhật Bình trong bối cảnh thường ngày',
     dieuKien: 'Áo Nhật Bình mặc vào dịp không mang tính nghi lễ, như cà phê, dạo phố, Tết, kỷ yếu, ra mắt gia đình',
     kiemTra: (look: LookState, boiCanh?: EventContext): boolean => {
-      const isNhatBinh = look.thuongY?.id === 'G06';
-      const isLowFormality = boiCanh ? boiCanh.mucTrangTrongYeuCau <= 3 : false;
-      return Boolean(isNhatBinh && isLowFormality);
+      // Đúng các dịp đời thường mà điều kiện liệt kê, không suy từ mức trang trọng:
+      // gia chủ đón Tết có mức 4 nhưng Tết vẫn không phải dịp nghi lễ cung đình.
+      const DIP_DOI_THUONG = ['E01', 'E02', 'E06', 'E07']; // Tết, kỷ yếu, ra mắt, dạo phố
+      return look.thuongY?.id === 'G06' && DIP_DOI_THUONG.includes(boiCanh?.id ?? '');
     },
     mucDo: 'do',
     thongDiep: 'Nhật Bình là phẩm phục của hậu phi và mệnh phụ triều Nguyễn, gắn với nghi lễ cung đình. Đưa vào bối cảnh thường ngày làm lớp nghĩa nghi lễ của nó mờ đi.',
@@ -179,14 +181,14 @@ export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-05',
     ten: 'Trang phục toàn sắc trắng trong đám cưới',
-    dieuKien: 'Toàn bộ trang phục màu trắng hoặc ngà khi đi dự đám cưới',
+    dieuKien: 'Áo và quần cùng màu trắng hoặc ngà khi đi dự đám cưới',
     kiemTra: (look: LookState, boiCanh?: EventContext): boolean => {
       if (boiCanh?.id !== 'E03') return false;
-      const isNga = (c?: string) => c === '#F2EDE3' || c === '#FBF8F2' || c?.toLowerCase() === '#ffffff';
-      const mainIsNga = isNga(look.mauChinh);
-      const topIsNga = look.thuongY ? isNga(look.thuongY.mauTruyenThong[0]) : true;
-      const bottomIsNga = look.haY ? isNga(look.haY.mauTruyenThong[0]) : true;
-      return Boolean(mainIsNga && topIsNga && bottomIsNga);
+      const isNga = (c?: string) => ['#F2EDE3', '#FBF8F2', '#FFFFFF'].some((m) => cungMau(c, m));
+      // Màu áo là màu người dùng chọn (mauChinh), không phải màu mặc định của món
+      const aoNga = isNga(look.mauChinh);
+      const quanNga = look.haY ? isNga(mauHaY(look)) : true;
+      return Boolean(look.thuongY && aoNga && quanNga);
     },
     mucDo: 'do',
     thongDiep: 'Trắng toàn phần gắn với tang phục trong quan niệm truyền thống, và ở hôn lễ hiện đại còn dễ lấn át vị trí của cô dâu.',
@@ -217,22 +219,23 @@ export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-06',
     ten: 'Đơn sắc thuần trắng hoặc thuần đen ngày Tết',
-    dieuKien: 'Toàn bộ trang phục màu trắng ngà hoặc toàn màu đen trong dịp Tết và du xuân',
+    dieuKien: 'Áo, quần và khăn cùng toàn màu trắng ngà hoặc cùng toàn màu đen trong dịp Tết và du xuân',
     kiemTra: (look: LookState, boiCanh?: EventContext): boolean => {
       if (boiCanh?.id !== 'E01') return false;
-      const isAllWhite = look.mauChinh === '#F2EDE3' || look.mauChinh === '#FBF8F2';
-      const isAllBlack = look.mauChinh === '#2C2A26' || look.mauChinh === '#0D1826' || look.mauChinh === '#1C1C1A';
-      return Boolean(isAllWhite || isAllBlack);
+      // Xét cả bộ: áo, quần và khăn (nếu có) cùng toàn trắng ngà hoặc cùng toàn đen
+      const cacMau = [look.mauChinh, mauHaY(look), mauThuPhuc(look)].filter((m): m is string => Boolean(m));
+      const toanBo = (bang: string[]) => cacMau.length > 0 && cacMau.every((m) => bang.some((x) => cungMau(m, x)));
+      return toanBo(['#F2EDE3', '#FBF8F2']) || toanBo(['#2C2A26', '#1C1C1A']);
     },
     mucDo: 'vang',
     thongDiep: 'Ngày đầu năm mới, hai thái cực trắng tang và đen tuyền đều được dân gian kiêng kỵ để đón sinh khí cát tường.',
     cachSua: [
       {
-        moTa: 'Thêm điểm nhấn màu điều may mắn ấm áp',
+        moTa: 'Đổi áo sang màu điều ấm áp ngày xuân',
         apDung: (look: LookState): LookState => ({ ...look, mauChinh: '#A8322A' }),
       },
       {
-        moTa: 'Chọn sắc lục biếc đâm chồi ngày xuân',
+        moTa: 'Đổi áo sang sắc lục biếc đâm chồi',
         apDung: (look: LookState): LookState => ({ ...look, mauChinh: '#3F6B5A' }),
       },
     ],
@@ -248,6 +251,9 @@ export const CULTURE_RULES: CultureRule[] = [
       phuKien: [],
       hoaVan: null,
       mauChinh: '#2C2A26',
+      // Quần và khăn cũng đen, đúng nghĩa toàn bộ trang phục một màu đen
+      mauHaY: '#2C2A26',
+      mauThuPhuc: '#2C2A26',
     },
   },
   {
@@ -258,7 +264,8 @@ export const CULTURE_RULES: CultureRule[] = [
       if (boiCanh?.id !== 'E03') return false;
       // Luật này dành cho khách mời. Người nhà hai họ, đội bê tráp là một phần của lễ, mặc theo nếp hai họ.
       if (boiCanh.vaiTro && boiCanh.vaiTro !== 'khach_moi') return false;
-      const isDieuOrHoang = look.mauChinh === '#A8322A' || look.mauChinh === '#C39A27' || look.mauChinh === '#E2C15E';
+      // Hoàng yến (#E2C15E) là vàng nhạt, không phải hoàng kim rực; CR-04 còn gợi ý chính màu này làm cách sửa
+      const isDieuOrHoang = cungMau(look.mauChinh, '#A8322A') || cungMau(look.mauChinh, '#C39A27');
       return isDieuOrHoang;
     },
     mucDo: 'vang',
@@ -334,15 +341,15 @@ export const CULTURE_RULES: CultureRule[] = [
   },
   {
     id: 'CR-09',
-    ten: 'Mấn hoặc khăn Huế phối cùng áo bà ba Nam Bộ',
-    dieuKien: 'Khăn vấn hoặc khăn đóng kiểu Huế đi cùng áo bà ba Nam Bộ',
+    ten: 'Khăn vấn, khăn đóng phối cùng áo bà ba',
+    dieuKien: 'Khăn vấn hoặc khăn đóng, vốn đi với lễ phục, đội cùng áo bà ba thường phục Nam Bộ',
     kiemTra: (look: LookState): boolean => {
       const isBaBa = look.thuongY?.id === 'G09';
-      const isKhanHue = look.thuPhuc?.id === 'G12' || look.thuPhuc?.id === 'G13';
-      return Boolean(isBaBa && isKhanHue);
+      const isKhanLePhuc = look.thuPhuc?.id === 'G12' || look.thuPhuc?.id === 'G13';
+      return Boolean(isBaBa && isKhanLePhuc);
     },
     mucDo: 'vang',
-    thongDiep: 'Áo bà ba và khăn vấn Huế thuộc hai vùng miền và tầng mức nghi lễ khác biệt, tạo cảm giác chênh lệch phong vị.',
+    thongDiep: 'Áo bà ba là thường phục Nam Bộ, đi cùng khăn rằn hoặc để đầu trần; khăn vấn, khăn đóng thuộc lễ phục. Đặt chung dễ lệch cả vùng miền lẫn tầng nghi lễ.',
     cachSua: [
       {
         moTa: 'Bỏ khăn vấn để tóc tự nhiên đúng phong thái Nam Bộ mộc mạc',
@@ -559,15 +566,15 @@ export const CULTURE_RULES: CultureRule[] = [
   },
   {
     id: 'CR-15',
-    ten: 'Áo tấc gấm trong thời tiết nắng nóng trên 32°C',
-    dieuKien: 'Áo tấc gấm mặc khi nhiệt độ môi trường vượt quá 32°C',
+    ten: 'Áo tấc trong thời tiết nắng nóng trên 32°C',
+    dieuKien: 'Áo tấc mặc khi nhiệt độ bạn nhập ở bước bối cảnh vượt quá 32°C',
     kiemTra: (look: LookState): boolean => {
       const isAoTac = look.thuongY?.id === 'G05';
       const isHot = (look.nhietDo ?? 25) > 32;
       return Boolean(isAoTac && isHot);
     },
     mucDo: 'vang',
-    thongDiep: 'Tay thụng rộng và chất liệu gấm dầy dễ gây ngột ngạt khi sinh hoạt ngoài trời nắng nóng. Đây là lưu ý tiện dụng cho người mặc.',
+    thongDiep: 'Áo tấc thân dài, tay thụng rộng, may bằng gấm thì càng dày, dễ gây ngột ngạt khi ở ngoài trời nắng nóng. Đây là lưu ý tiện dụng cho người mặc.',
     cachSua: [
       {
         moTa: 'Đổi sang áo ngũ thân tay chẽn chất the hoặc đũi thoáng mát',
@@ -597,15 +604,20 @@ export const CULTURE_RULES: CultureRule[] = [
   },
   {
     id: 'CR-16',
-    ten: 'Đầu trần trong đại lễ nghi thức cấp cao',
-    dieuKien: 'Không đội khăn hay mũ trong dịp trang trọng, như lễ chùa, lễ gia tiên, cưới hỏi, biểu diễn',
+    ten: 'Đầu trần khi đứng trong nghi lễ',
+    dieuKien: 'Mặc áo lễ (giao lĩnh, viên lĩnh, ngũ thân, áo tấc, Nhật Bình) mà để đầu trần khi bạn là người đứng trong nghi lễ: chủ lễ, con cháu dự giỗ, gia chủ đón Tết, người nhà hai họ, đội bê tráp, người biểu diễn',
     kiemTra: (look: LookState, boiCanh?: EventContext): boolean => {
-      const isHighFormality = (boiCanh?.mucTrangTrongYeuCau ?? 0) >= 4;
-      const noHeadwear = !look.thuPhuc;
-      return Boolean(isHighFormality && noHeadwear);
+      // Khách cưới, người đi chùa, người mặc áo dài tân thời để đầu trần là bình thường; chỉ người
+      // đứng trong nghi lễ mặc áo lễ mới cần khăn đi cùng bộ.
+      const AO_LE = ['G01', 'G02', 'G04', 'G05', 'G06'];
+      const VAI_TRONG_LE = ['chu_le', 'con_chau', 'chu_nha', 'nguoi_nha', 'be_trap', 'bieu_dien'];
+      if (look.thuPhuc || !look.thuongY || !AO_LE.includes(look.thuongY.id)) return false;
+      if (boiCanh?.vaiTro) return VAI_TRONG_LE.includes(boiCanh.vaiTro);
+      // Bối cảnh không kèm vai (trang giới thiệu): dùng mức trang trọng của dịp
+      return (boiCanh?.mucTrangTrongYeuCau ?? 0) >= 4;
     },
     mucDo: 'vang',
-    thongDiep: 'Theo quy thức trang phục truyền thống, ở mức đại lễ trang trọng, đầu tóc để trần làm tổng thể y phục thiếu đi vẻ tề chỉnh trọn vẹn.',
+    thongDiep: 'Với người đứng trong nghi lễ, áo lễ thường đi cùng khăn vấn hoặc khăn đóng; để đầu trần làm bộ lễ phục thiếu phần đầu. Khách dự và người đi lễ thì không cần đội.',
     cachSua: [
       {
         moTa: 'Bổ sung khăn vấn hoặc khăn đóng chỉnh tề',
@@ -740,12 +752,12 @@ export const CULTURE_RULES: CultureRule[] = [
   },
   {
     id: 'CR-20',
-    ten: 'Cổ áo hoặc vạt áo buông lỏng khi hành lễ',
-    dieuKien: 'Cổ áo giao lĩnh hay ngũ thân mặc buông lỏng hoặc lệch vạt trong lễ chùa, lễ gia tiên',
+    ten: 'Nhắc chỉnh cổ áo, vạt áo khi hành lễ',
+    dieuKien: 'Lời nhắc khi mặc áo giao lĩnh hoặc ngũ thân đi lễ chùa, lễ gia tiên. App không nhìn được cổ áo thật nên đây chỉ là lời nhắc, không phải phát hiện lỗi',
     kiemTra: (look: LookState, boiCanh?: EventContext): boolean => {
       const isSolemn = boiCanh?.id === 'E04' || boiCanh?.id === 'E05';
       const isTradTop = look.thuongY?.id === 'G01' || look.thuongY?.id === 'G04';
-      return Boolean(isSolemn && isTradTop && !look.phuKienHienDai);
+      return Boolean(isSolemn && isTradTop);
     },
     mucDo: 'xanh',
     thongDiep: 'Đường cổ áo ngũ thân khép kín và giao lĩnh vắt chéo là biểu trưng của phong thái đàng hoàng, cần giữ ngay ngắn khi tham dự lễ bái.',

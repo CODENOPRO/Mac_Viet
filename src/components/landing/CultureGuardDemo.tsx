@@ -6,6 +6,7 @@ import { TRADITIONAL_COLORS } from '../../data/palettes';
 import { kiemTraVanHoa } from '../../lib/cultureGuard';
 import SourceTag from '../shared/SourceTag';
 import { CultureRule, LookState } from '../../types';
+import { chiDuaNguonChuaCongBo } from '../../data/sources';
 
 // Bàn thực hành: khách tự chọn áo, màu, khăn nón và dịp; Culture Guard thật chấm ngay.
 // Mọi chữ trong phần kết quả đều lấy từ bộ máy kiểm tra và dữ liệu luật, không viết tay.
@@ -144,6 +145,7 @@ export default function CultureGuardDemo({ onExploreRules }: CultureGuardDemoPro
           {luatDau && (
             <span className="font-sans text-xs text-[#2C2A26]/70">
               {DO_CHAC_CHAN[luatDau.doChacChan]}
+              {chiDuaNguonChuaCongBo(luatDau.sourceIds) ? ' · chỉ mang tính gợi ý' : ''}
               {soLuatKhac > 0 ? ` · thêm ${soLuatKhac} lưu ý khác` : ''}
             </span>
           )}

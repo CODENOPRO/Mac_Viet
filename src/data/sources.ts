@@ -268,3 +268,14 @@ export const SOURCES: Source[] = [
     },
   },
 ];
+
+/**
+ * Luật chỉ dựa trên nguồn chưa công bố (quan sát thực hành hiện nay, ghi chép của đội).
+ * Giao diện ghi rõ điều này ngay cạnh luật, đúng như lời hứa ở trang giới thiệu.
+ */
+export function chiDuaNguonChuaCongBo(sourceIds: string[]): boolean {
+  const cacNguon = sourceIds.map((id) => SOURCES.find((s) => s.id === id)).filter(Boolean);
+  return cacNguon.length > 0 && cacNguon.every((s) => s!.kiemChung.cach === 'chua_cong_bo');
+}
+
+export const NHAN_NGUON_CHUA_CONG_BO = 'Chỉ dựa trên quan sát thực hành, chưa có bản công bố: mang tính gợi ý';

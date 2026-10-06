@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { LUAT_CHO_DU_LIEU, CULTURE_RULES } from '../../data/cultureRules';
-import { SOURCES } from '../../data/sources';
+import { SOURCES, chiDuaNguonChuaCongBo, NHAN_NGUON_CHUA_CONG_BO } from '../../data/sources';
 import { store } from '../../lib/store';
 import { CultureRule, Source } from '../../types';
 import SourceDetailModal from './SourceDetailModal';
@@ -272,6 +272,9 @@ export default function CultureRulesScreen() {
                         {/* Hàng thông tin: Nhãn độ chắc chắn */}
                         <div className="flex flex-wrap items-center gap-2.5">
                           {renderCertaintyPill(rule.doChacChan)}
+                          {chiDuaNguonChuaCongBo(rule.sourceIds) && (
+                            <span className="font-sans text-[11px] text-[#6E5439]">{NHAN_NGUON_CHUA_CONG_BO}</span>
+                          )}
                         </div>
 
                         {/* Tên luật Fraunces cỡ 22px */}

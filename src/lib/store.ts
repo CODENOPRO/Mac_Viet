@@ -380,39 +380,38 @@ export const store = {
     const rule = CULTURE_RULES.find((r) => r.id === ruleId);
     if (!rule || !rule.viDu || LUAT_CHO_DU_LIEU.includes(rule.id)) return;
 
-    let newEvent = state.selectedEvent;
-    let newRegion = state.selectedRegion;
+    // Mỗi ví dụ dựng trong một bối cảnh cố định, không kế thừa dịp hay vùng của ví dụ xem trước đó,
+    // để luật đang xem luôn bật và không lẫn luật khác do bối cảnh cũ còn sót.
+    // Vai lấy vai mặc định của dịp; phong cách về Nguyên bản để luật chạy đủ mức.
+    const BOI_CANH_VI_DU: Record<string, { eventId: string; regionId?: string }> = {
+      'CR-05': { eventId: 'E03' },
+      'CR-06': { eventId: 'E01' },
+      'CR-07': { eventId: 'E03' },
+      'CR-08': { eventId: 'E04' },
+      'CR-09': { eventId: 'E07', regionId: 'R03' },
+      'CR-10': { eventId: 'E07', regionId: 'R03' },
+      'CR-13': { eventId: 'E01' }, // luật áp ngoài dạo phố và biểu diễn
+      'CR-14': { eventId: 'E05' },
+      'CR-15': { eventId: 'E03' },
+      'CR-16': { eventId: 'E05' }, // người chủ lễ
+      'CR-20': { eventId: 'E04' },
+    };
+    const bc = BOI_CANH_VI_DU[rule.id] || { eventId: 'E07' };
 
-    if (rule.id === 'CR-01' || rule.id === 'CR-03' || rule.id === 'CR-04') {
-      const cafe = EVENTS.find((e) => e.id === 'E07') || EVENTS.find((e) => e.mucTrangTrongYeuCau <= 3);
-      if (cafe) newEvent = cafe;
-    } else if (rule.id === 'CR-05' || rule.id === 'CR-07') {
-      const damCuoi = EVENTS.find((e) => e.id === 'E03');
-      if (damCuoi) newEvent = damCuoi;
-    } else if (rule.id === 'CR-06') {
-      const tet = EVENTS.find((e) => e.id === 'E01');
-      if (tet) newEvent = tet;
-    } else if (rule.id === 'CR-08' || rule.id === 'CR-16' || rule.id === 'CR-20') {
-      const leChua = EVENTS.find((e) => e.id === 'E04');
-      if (leChua) newEvent = leChua;
-    } else if (rule.id === 'CR-10') {
-      const namBo = REGIONS.find((r) => r.id === 'R03' || r.id === 'nam');
-      if (namBo) newRegion = namBo;
-    } else if (rule.id === 'CR-14') {
-      const giaTien = EVENTS.find((e) => e.id === 'E05');
-      if (giaTien) newEvent = giaTien;
-    } else if (rule.id === 'CR-19') {
-      const tayBac = REGIONS.find((r) => r.id === 'R04' || r.id === 'tay_bac');
-      if (tayBac) newRegion = tayBac;
-    }
-
-    const nextLook = { ...rule.viDu };
+    const nhietDo = rule.viDu.nhietDo ?? 24;
+    const nextLook = { ...rule.viDu, nhietDo };
     state = {
       ...state,
       currentScreen: 'studio',
       studioStep: 3,
       // Đổi qua voiBoiCanh để màn bối cảnh, luật và ảnh cùng thấy đúng dịp, vùng của ví dụ
-      ...voiBoiCanh({ eventId: newEvent.id, regionId: newRegion.id }),
+      ...voiBoiCanh({
+        eventId: bc.eventId,
+        regionId: bc.regionId || 'R01',
+        vaiTro: undefined,
+        phongCach: 'nguyen_ban',
+        nhietDo,
+      }),
       lookState: nextLook,
       isTryOnStale: true,
     };
@@ -420,6 +419,7 @@ export const store = {
     if (typeof window !== 'undefined') {
       window.history.pushState(null, '', '#xuong-phoi');
     }
+    syncHashWithLookState(nextLook);
     emitChange();
   },
 

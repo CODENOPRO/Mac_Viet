@@ -35,7 +35,7 @@ const FAQS: FAQItem[] = [
   {
     id: 4,
     question: 'Dữ liệu của app lấy từ đâu?',
-    answer: `Mặc Việt dựa trên ${SOURCES.length} nguồn. ${SOURCES.filter((s) => s.kiemChung.cach !== 'chua_cong_bo').length} nguồn là sách, sử liệu và hiện vật bảo tàng, mỗi nguồn kèm liên kết để bạn tự kiểm, nòng cốt là sách Ngàn năm áo mũ (Trần Quang Đức), Đại Nam thực lục, Khâm định Đại Nam hội điển sự lệ cùng hiện vật tại các bảo tàng. ${SOURCES.filter((s) => s.kiemChung.cach === 'chua_cong_bo').length} nguồn còn lại là quan sát thực hành hiện nay, chưa có bản công bố, và luật nào dựa vào chúng đều ghi rõ là chỉ mang tính gợi ý. Bấm vào dòng Nguồn ở bất kỳ đâu trong app để xem cách kiểm chứng.`,
+    answer: `Mặc Việt dựa trên ${SOURCES.length} nguồn. ${SOURCES.filter((s) => s.kiemChung.cach !== 'chua_cong_bo').length} nguồn là sách, sử liệu và hiện vật bảo tàng, mỗi nguồn kèm liên kết để bạn tự kiểm, nòng cốt là sách Ngàn năm áo mũ (Trần Quang Đức), Đại Nam thực lục, Khâm định Đại Nam hội điển sự lệ cùng hiện vật tại các bảo tàng. ${SOURCES.filter((s) => s.kiemChung.cach === 'chua_cong_bo').length} nguồn còn lại là quan sát thực hành hiện nay, chưa có bản công bố; luật nào chỉ dựa vào chúng đều ghi rõ ngay cạnh luật là chỉ mang tính gợi ý. Bấm vào dòng Nguồn ở bất kỳ đâu trong app để xem cách kiểm chứng.`,
   },
   {
     id: 5,

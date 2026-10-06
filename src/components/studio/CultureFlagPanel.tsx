@@ -3,6 +3,7 @@ import { useStore, store } from '../../lib/store';
 import { kiemTraVanHoa } from '../../lib/cultureGuard';
 import { CultureFlag, LookState } from '../../types';
 import SourceTag from '../shared/SourceTag';
+import { chiDuaNguonChuaCongBo, NHAN_NGUON_CHUA_CONG_BO } from '../../data/sources';
 
 interface CultureFlagPanelProps {
   customFlag?: CultureFlag;
@@ -213,6 +214,9 @@ export default function CultureFlagPanel({
             <strong className="text-[#2C2A26]">
               {doChacChanMap[topRuleItem.rule.doChacChan] || topRuleItem.rule.doChacChan}
             </strong>
+            {chiDuaNguonChuaCongBo(topRuleItem.rule.sourceIds) && (
+              <span className="normal-case font-sans text-[10px] text-[#6E5439]">· {NHAN_NGUON_CHUA_CONG_BO}</span>
+            )}
           </div>
 
           {/* Nguồn tham khảo */}
