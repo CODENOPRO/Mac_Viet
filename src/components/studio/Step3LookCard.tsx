@@ -19,7 +19,6 @@ import { chonBoiCanhTuDong } from '../../data/backgrounds';
 import CompareLooksModal from './CompareLooksModal';
 import TryOnModal from './TryOnModal';
 import AiExplanationModal from './AiExplanationModal';
-import { BACKGROUNDS } from '../../data/backgrounds';
 import { Source } from '../../types';
 import { exportLookCardPoster } from '../../lib/tryOnGuard';
 import SourceTag from '../shared/SourceTag';
@@ -31,7 +30,6 @@ export default function Step3LookCard() {
     contextSetup,
     userPhoto,
     activeTryOnImage,
-    tryOnBackgroundId,
   } = useStore();
 
   const [isHoldingCompare, setIsHoldingCompare] = useState(false);
@@ -42,21 +40,25 @@ export default function Step3LookCard() {
     if (isRebuilding) return;
     setIsRebuilding(true);
     try {
-      const bg =
-        BACKGROUNDS.find((b) => b.id === tryOnBackgroundId) ||
-        chonBoiCanhTuDong(selectedEvent?.id);
-      const anhNguoiInput = userPhoto || '';
       const res = await macThu({
-        anhNguoi: anhNguoiInput,
+        anhNguoi: userPhoto || '',
         look: lookState,
         boiCanh: selectedEvent,
-        background: bg,
+        background: chonBoiCanhTuDong(selectedEvent?.id),
         chatLuong: 'nhanh',
       });
+      if (!res.anh) {
+        // Không dựng được thì nói thẳng lý do, không đè ảnh cũ bằng ảnh rỗng
+        showToast(res.canhBao[0] || 'Lần này chưa dựng được ảnh, bạn thử lại sau.');
+        return;
+      }
       setAiImageUrl(res.anh);
       setIsAiImage(true);
       store.setActiveTryOnImage(res.anh);
-      showToast('Đã dựng lại diện mạo mới');
+      store.addToTryOnHistory(res.anh);
+      store.setLastTriedLook(lookState);
+      store.setIsTryOnStale(false);
+      showToast(dangHienAnhAI ? 'Đã dựng lại diện mạo mới' : 'Đã dựng ảnh mặc thử');
     } catch (err) {
       console.warn('Lỗi khi dựng lại', err);
       showToast('Không thể kết nối để dựng lại ảnh');
@@ -271,42 +273,11 @@ export default function Step3LookCard() {
         if (isMounted) setLoadingCultureCheck(false);
       });
 
-    // D. Khối Ảnh: ưu tiên activeTryOnImage đã mặc thử ở Bước 3
-    if (activeTryOnImage) {
-      setAiImageUrl(activeTryOnImage);
-      setIsAiImage(true);
-      setLoadingImage(false);
-    } else {
-      setLoadingImage(true);
-      const bg = chonBoiCanhTuDong(selectedEvent?.id);
-      const anhNguoiInput = userPhoto || '';
-      macThu({
-        anhNguoi: anhNguoiInput,
-        look: lookState,
-        boiCanh: selectedEvent,
-        background: bg,
-        chatLuong: 'nhanh',
-      })
-        .then((res) => {
-          if (isMounted) {
-            if (res?.anh) {
-              setAiImageUrl(res.anh);
-              setIsAiImage(true);
-            } else {
-              setIsAiImage(false);
-            }
-          }
-        })
-        .catch((err) => {
-          console.warn('[Gemini macThu error, flat composite kept]', err);
-          if (isMounted) {
-            setIsAiImage(false);
-          }
-        })
-        .finally(() => {
-          if (isMounted) setLoadingImage(false);
-        });
-    }
+    // D. Khối Ảnh: chỉ hiện ảnh đã mặc thử ở Bước 3. Không tự dựng ảnh mới khi mở Look Card,
+    //    vì mỗi lần dựng tốn lượt và tiền; người dùng bấm "Dựng ảnh mặc thử" nếu muốn.
+    setAiImageUrl(activeTryOnImage || null);
+    setIsAiImage(Boolean(activeTryOnImage));
+    setLoadingImage(false);
 
     return () => {
       isMounted = false;
@@ -533,6 +504,17 @@ export default function Step3LookCard() {
                 </a>
               )}
             </div>
+
+            {!dangHienAnhAI && (
+              <button
+                type="button"
+                disabled={isRebuilding}
+                onClick={handleRebuild}
+                className="w-full py-2.5 px-3 border border-[#A8322A] bg-[#A8322A] text-[#F2EDE3] hover:bg-[#A8322A]/90 font-mono text-xs uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
+              >
+                {isRebuilding ? 'ĐANG DỰNG ẢNH...' : 'DỰNG ẢNH MẶC THỬ'}
+              </button>
+            )}
 
             {dangHienAnhAI && (
               <>

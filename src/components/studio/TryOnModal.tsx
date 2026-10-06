@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { LookState } from '../../types';
 import { nenAnhChoAI } from '../../lib/gemini';
 import { macThu } from '../../lib/tryOn';
+import { getDailyQuota, KY_QUOTA_LIMIT } from '../../lib/tryOnGuard';
 import { chonBoiCanhTuDong } from '../../data/backgrounds';
 import { useStore, store } from '../../lib/store';
 import { EVENTS } from '../../data/events';
@@ -165,12 +166,14 @@ export default function TryOnModal({
       // 2. Gửi ảnh đã xử lý tới Gemini qua macThu với chế độ kỹ 2 lượt
       const boiCanh = selectedEvent || EVENTS[0];
       const bg = chonBoiCanhTuDong(boiCanh.id);
+      // Chế độ Kỹ giới hạn 2 lượt mỗi ngày như ở màn phối đồ; hết lượt thì dùng chế độ Nhanh
+      const conLuotKy = getDailyQuota().countKy < KY_QUOTA_LIMIT;
       const res = await macThu({
         anhNguoi: croppedBase64,
         look: lookState,
         boiCanh,
         background: bg,
-        chatLuong: 'ky',
+        chatLuong: conLuotKy ? 'ky' : 'nhanh',
       });
 
       if (res?.anh) {
@@ -181,7 +184,8 @@ export default function TryOnModal({
         onSuccess(res.anh);
         onClose();
       } else {
-        throw new Error('MODEL_NO_IMAGE');
+        // Nói đúng lý do app trả về (ảnh nhiều người, hết lượt, chưa có máy dựng...), không gộp thành lỗi chung
+        setGentleErrorMessage(res.canhBao[0] || 'Lần này chưa dựng được ảnh. Bạn thử lại với một bức ảnh khác.');
       }
     } catch {
       setGentleErrorMessage(
