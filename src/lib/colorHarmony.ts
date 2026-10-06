@@ -253,8 +253,8 @@ export function tinhHaiHoa(
     : 'Thiếu vắng màu trung tính để làm dịu các mảng màu chính.';
 
   // ---------------------------------------------------------------------------
-  // 5. TÍNH CHÍNH DANH TRUYỀN THỐNG (10 ĐIỂM)
-  // So bộ màu đang chọn với 6 bảng màu lịch sử trong data/palettes.ts
+  // 5. KHỚP BẢNG MÀU GỢI Ý (10 ĐIỂM)
+  // So bộ màu đang chọn với 6 bảng màu gợi ý trong data/palettes.ts (nhóm tổng hợp, chưa gắn nguồn)
   // ---------------------------------------------------------------------------
   let maxKhop = 0;
   let bangMauKhopTen: string | null = null;
@@ -278,17 +278,17 @@ export function tinhHaiHoa(
 
   if (maxKhop >= 3) {
     diemChinhDanh = 10;
-    nhanXetChinhDanh = `Khớp cao với điển chế bảng màu lịch sử "${bangMauKhopTen}".`;
+    nhanXetChinhDanh = `Khớp bảng màu gợi ý "${bangMauKhopTen}".`;
   } else if (maxKhop === 2) {
     diemChinhDanh = 7;
-    nhanXetChinhDanh = `Thừa hưởng cấu trúc từ bảng màu truyền thống "${bangMauKhopTen}".`;
+    nhanXetChinhDanh = `Gần với bảng màu gợi ý "${bangMauKhopTen}".`;
   } else if (maxKhop === 1) {
     diemChinhDanh = 4;
-    nhanXetChinhDanh = 'Chớm có nét tương đồng với gam màu di sản.';
+    nhanXetChinhDanh = 'Có một màu trùng với bảng màu gợi ý.';
   } else {
     diemChinhDanh = 2;
     bangMauKhopTen = null;
-    nhanXetChinhDanh = 'Bảng màu mang tính đương đại, chưa tìm thấy đối sánh cổ phục chuẩn.';
+    nhanXetChinhDanh = 'Chưa khớp bảng màu gợi ý nào.';
   }
 
   // ---------------------------------------------------------------------------

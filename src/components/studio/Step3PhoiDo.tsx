@@ -6,7 +6,7 @@ import { MOTIFS } from '../../data/motifs';
 import { chonBoiCanhTuDong } from '../../data/backgrounds';
 import { GarmentLayer, Garment, Motif, Background } from '../../types';
 import { tinhHaiHoa, ColorInputItem } from '../../lib/colorHarmony';
-import { kiemTraVanHoa } from '../../lib/cultureGuard';
+import { kiemTraVanHoa, luatMauKhiChon } from '../../lib/cultureGuard';
 import { macThu, KiemTraAnh, xoaToanBoCacheTryOn } from '../../lib/tryOn';
 import { dungBoiCanhAnh } from '../../lib/promptDong';
 import CultureFlagPanel from './CultureFlagPanel';
@@ -905,30 +905,71 @@ export default function Step3PhoiDo() {
               </div>
             )}
 
-            {/* LỚP 6: MÀU SẮC */}
+            {/* LỚP 6: MÀU ÁO */}
             {activeLayer === 'L6' && (
               <div className="flex flex-col gap-4">
+                {/* Bối cảnh màu: lấy từ dữ liệu dịp, không tự đặt */}
+                <div className="p-2.5 bg-[#F2EDE3] border border-[#2C2A26]/12 font-sans text-[11px] text-[#2C2A26] leading-relaxed">
+                  {selectedEvent.mauNenDung.some((m) => m.startsWith('#')) ? (
+                    <>
+                      Dịp {selectedEvent.ten} thường chuộng:{' '}
+                      {selectedEvent.mauNenDung.filter((m) => m.startsWith('#')).map(layTenMau).join(', ')}.
+                    </>
+                  ) : (
+                    <>Dịp {selectedEvent.ten}: {selectedEvent.mauNenDung.join(', ')}.</>
+                  )}{' '}
+                  Nên tránh: {selectedEvent.mauNenTranh.join(', ')}.
+                  {lookState.thuongY && (
+                    <span className="block text-[#6E5439] mt-0.5">
+                      Màu áo chọn tự do để phối; màu truyền thống của {lookState.thuongY.ten.toLowerCase()} được đánh dấu.
+                    </span>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-2 gap-2">
                   {TRADITIONAL_COLORS.map((c) => {
                     const isSelected = lookState.mauChinh?.toLowerCase() === c.hex.toLowerCase();
+                    const truyenThong = lookState.thuongY?.mauTruyenThong.some((h) => h.toUpperCase() === c.hex.toUpperCase());
+                    const dipChuong = selectedEvent.mauNenDung.some((h) => h.toUpperCase() === c.hex.toUpperCase());
+                    // Báo trước luật màu sẽ bật, cùng engine với Culture Guard
+                    const canhBao = luatMauKhiChon(lookState, c.hex, selectedEvent, contextSetup.regionId);
                     return (
                       <button
                         key={c.id}
                         type="button"
                         onClick={() => store.setMauChinh(c.hex)}
-                        className={`flex items-center gap-2.5 p-2 border transition-all cursor-pointer ${
+                        title={c.yNghia}
+                        className={`flex items-start gap-2.5 p-2 border text-left transition-all cursor-pointer ${
                           isSelected ? 'border-[#A8322A] bg-[#F2EDE3]' : 'border-[#2C2A26]/15 bg-[#FBF8F2]'
                         }`}
                       >
-                        <span className="w-5 h-5 rounded-full border border-black/10 shrink-0" style={{ backgroundColor: c.hex }} />
-                        <span className="font-display text-xs text-[#2C2A26]">{c.ten}</span>
+                        <span className="w-5 h-5 mt-0.5 rounded-full border border-black/10 shrink-0" style={{ backgroundColor: c.hex }} />
+                        <span className="flex flex-col min-w-0">
+                          <span className="font-display text-xs text-[#2C2A26]">{c.ten}</span>
+                          {(truyenThong || dipChuong) && (
+                            <span className="font-mono text-[9px] text-[#3F6B5A] leading-snug">
+                              {[truyenThong ? 'màu của áo' : '', dipChuong ? 'dịp chuộng' : ''].filter(Boolean).join(' · ')}
+                            </span>
+                          )}
+                          {canhBao.map((r) => (
+                            <span
+                              key={r.id}
+                              className={`font-sans text-[10px] leading-snug ${r.mucDo === 'do' ? 'text-[#A8322A]' : 'text-[#8C6D1F]'}`}
+                            >
+                              Cảnh báo: {r.ten.toLowerCase()}
+                              {/* CR-05, CR-06 xét cả bộ: bật hay không còn tuỳ màu quần, khăn đang chọn */}
+                              {['CR-05', 'CR-06'].includes(r.id) ? ', vì quần hoặc khăn đang cùng màu' : ''}
+                            </span>
+                          ))}
+                        </span>
                       </button>
                     );
                   })}
                 </div>
 
                 <div className="pt-3 border-t border-[#2C2A26]/12">
-                  <span className="font-mono text-[10px] uppercase text-[#6E5439] block mb-2">BẢNG MÀU DI SẢN · ÁP CHO CẢ BỘ</span>
+                  <span className="font-mono text-[10px] uppercase text-[#6E5439] block">BẢNG MÀU GỢI Ý · ÁP CHO CẢ BỘ</span>
+                  <span className="font-sans text-[10px] text-[#6E5439] block mb-2">Nhóm tổng hợp từ dữ liệu vùng miền và dịp, chưa gắn nguồn.</span>
                   <div className="flex flex-col gap-2">
                     {HISTORICAL_PALETTES.map((p) => (
                       <button
@@ -953,6 +994,11 @@ export default function Step3PhoiDo() {
                           </div>
                         </div>
                         <p className="font-sans text-[11px] text-[#6E5439] line-clamp-1">{p.moTa}</p>
+                        {luatMauKhiChon(lookState, p.mauSac[0], selectedEvent, contextSetup.regionId).map((r) => (
+                          <p key={r.id} className="font-sans text-[10px] text-[#8C6D1F] leading-snug">
+                            Màu áo của bảng này bị cảnh báo: {r.ten.toLowerCase()}
+                          </p>
+                        ))}
                       </button>
                     ))}
                   </div>

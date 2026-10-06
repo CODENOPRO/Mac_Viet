@@ -11,13 +11,13 @@ export const TRADITIONAL_COLORS: NamedColor[] = [
     id: 'clr-cham-sau',
     ten: 'Chàm sâu',
     hex: '#0D1826',
-    yNghia: 'Tông tối nhất, không bao giờ dùng đen tuyệt đối'
+    yNghia: 'Chàm sẫm gần đen'
   },
   {
     id: 'clr-dieu',
     ten: 'Điều',
     hex: '#A8322A',
-    yNghia: 'Đỏ trầm, dùng làm điểm nhấn duy nhất'
+    yNghia: 'Đỏ trầm'
   },
   {
     id: 'clr-yem-dao',
@@ -53,7 +53,7 @@ export const TRADITIONAL_COLORS: NamedColor[] = [
     id: 'clr-hoang',
     ten: 'Hoàng',
     hex: '#C39A27',
-    yNghia: 'Vàng kim loại, dùng cho nét mảnh'
+    yNghia: 'Vàng đậm ánh kim; mảng lớn dễ gợi phẩm phục cung đình (xem luật CR-04)'
   },
   {
     id: 'clr-hoang-yen',
@@ -87,6 +87,8 @@ export const TRADITIONAL_COLORS: NamedColor[] = [
   }
 ];
 
+// Sáu bảng màu gợi ý do nhóm tổng hợp từ dữ liệu vùng miền (regions.ts) và dịp (events.ts).
+// Chưa gắn nguồn nên giao diện gọi là "bảng màu gợi ý", không gọi là bảng màu lịch sử hay điển chế.
 export const HISTORICAL_PALETTES: Palette[] = [
   {
     id: 'pal-bac-bo-dan-gian',
@@ -106,7 +108,7 @@ export const HISTORICAL_PALETTES: Palette[] = [
     id: 'pal-cham-dieu-nga',
     ten: 'Chàm điều ngà',
     mauSac: ['#16243A', '#A8322A', '#F2EDE3'],
-    moTa: 'Chàm, điều, ngà (bảng an toàn nhất, hợp gần như mọi bối cảnh)',
+    moTa: 'Chàm, điều, ngà',
     thoiKyHoacVung: 'Toàn quốc'
   },
   {

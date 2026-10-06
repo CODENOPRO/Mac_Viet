@@ -382,6 +382,20 @@ export function kiemTraVanHoa(
   };
 }
 
+/** Các luật xét màu áo; dùng để báo trước ở tab màu, trước khi người dùng chọn */
+const LUAT_MAU = ['CR-04', 'CR-05', 'CR-06', 'CR-07'];
+
+/** Những luật màu sẽ bật nếu đổi màu áo sang hex, với đúng bộ đồ và bối cảnh đang chọn */
+export function luatMauKhiChon(
+  look: LookState,
+  hex: string,
+  boiCanh?: EventContext,
+  regionId?: string
+): CultureRule[] {
+  const thu = { ...look, mauChinh: hex };
+  return CULTURE_RULES.filter((r) => LUAT_MAU.includes(r.id) && r.kiemTra(thu, boiCanh, regionId));
+}
+
 export interface GuardTestItem {
   stt: number;
   toHop: string;

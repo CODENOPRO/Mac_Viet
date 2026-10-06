@@ -6,7 +6,8 @@ export const EVENTS: EventContext[] = [
     ten: 'Tết và du xuân',
     moTa: 'Không khí đón xuân rộn ràng, mừng năm mới cùng gia đình và bạn bè.',
     mucTrangTrongYeuCau: 3,
-    mauNenDung: ['#A8322A', '#E2C15E', '#C39A27', '#F2EDE3', '#16243A'],
+    // Không có hoàng (#C39A27): làm màu áo thì luật CR-04 cảnh báo, chỉ nên là điểm nhấn
+    mauNenDung: ['#A8322A', '#E2C15E', '#F2EDE3', '#16243A'],
     mauNenTranh: ['trắng toàn phần', 'đen toàn phần'],
     luuY: 'Màu ấm được chuộng, nhưng không bắt buộc phải đỏ.'
   },
