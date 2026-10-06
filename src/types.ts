@@ -185,7 +185,24 @@ export interface HarmonyResult {
   goiY: string[];
 }
 
-export type VaiTro = 'chu_nha' | 'khach_moi' | 'co_dau_chu_re' | 'bieu_dien';
+// Vai trò gắn với từng dịp, xem data/boiCanhSuKien.ts
+export type VaiTro =
+  | 'chu_nha'
+  | 'di_chuc_tet'
+  | 'du_xuan'
+  | 'hoc_sinh'
+  | 'thay_co'
+  | 'khach_moi'
+  | 'nguoi_nha'
+  | 'be_trap'
+  | 'nguoi_di_le'
+  | 'chu_le'
+  | 'con_chau'
+  | 'nguoi_ra_mat'
+  | 'dao_pho'
+  | 'bieu_dien'
+  | 'dan_chuong_trinh'
+  | 'khan_gia';
 export type PhongCach = 'nguyen_ban' | 'toi_gian' | 'remix_pho' | 'san_khau';
 export type NganSach = 'thue' | 'may_do' | 'mua_san';
 export type NguoiMacGioiTinh = 'nam' | 'nu' | 'khong_neu';

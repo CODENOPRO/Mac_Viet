@@ -13,6 +13,7 @@ import {
   StudioStep,
 } from '../types';
 import { EVENTS } from '../data/events';
+import { chuanHoaBoiCanh } from '../data/boiCanhSuKien';
 import { MOTIFS } from '../data/motifs';
 import { luuAnhLook, docAnhLook, xoaAnhLook } from './anhLookbook';
 import { GARMENTS } from '../data/garments';
@@ -93,7 +94,7 @@ const initialContextSetup: UserContextSetup = {
   mucTrangTrong: 3,
   nhietDo: 24,
   thoiTietMua: false,
-  vaiTro: 'khach_moi',
+  vaiTro: 'chu_nha',
   phongCach: 'nguyen_ban',
   nganSach: 'thue',
   nguoiMac: 'khong_neu',
@@ -282,7 +283,8 @@ export const store = {
   setContextSetup(partial: Partial<UserContextSetup>) {
     state = {
       ...state,
-      contextSetup: { ...state.contextSetup, ...partial },
+      // Dịp là gốc: vai trò, mức trang trọng, phong cách luôn được đưa về tổ hợp hợp với dịp
+      contextSetup: chuanHoaBoiCanh(state.contextSetup, { ...state.contextSetup, ...partial }),
       // Bối cảnh đổi thì prompt ảnh đổi, nên ảnh đang có không còn khớp
       isTryOnStale: state.activeTryOnImage ? true : state.isTryOnStale,
     };
@@ -539,7 +541,7 @@ export const store = {
       ...state,
       lookState: look,
       selectedEvent: dip,
-      contextSetup: { ...state.contextSetup, eventId: dip.id },
+      contextSetup: chuanHoaBoiCanh(state.contextSetup, { ...state.contextSetup, eventId: dip.id }),
       activeTryOnImage: null,
       lastTriedLook: null,
       isTryOnStale: false,

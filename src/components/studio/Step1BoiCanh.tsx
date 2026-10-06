@@ -6,18 +6,17 @@ import { GARMENTS } from '../../data/garments';
 
 const MA_VUNG: Record<string, RegionId> = { R01: 'bac', R02: 'trung', R03: 'nam', R04: 'tay_bac' };
 import { layTenMucTrangTrong } from '../../data/palettes';
-import { VaiTro, PhongCach, NganSach, RegionId, formatStudioStepLabel } from '../../types';
+import { layLuatSuKien, layVaiTro, MucTrangTrong } from '../../data/boiCanhSuKien';
+import { PhongCach, NganSach, RegionId, formatStudioStepLabel } from '../../types';
 
 export default function Step1BoiCanh() {
   const { contextSetup, selectedEvent, selectedRegion } = useStore();
   const [isCustomOpen, setIsCustomOpen] = useState(false);
 
-  const vaiTroOptions: { id: VaiTro; label: string; desc: string }[] = [
-    { id: 'chu_nha', label: 'Chủ nhà', desc: 'Đón tiếp họ hàng, giữ nếp gia phong' },
-    { id: 'khach_moi', label: 'Khách mời', desc: 'Trang nhã, không lấn át nhân vật chính' },
-    { id: 'co_dau_chu_re', label: 'Cô dâu chú rể', desc: 'Tâm điểm ngày đại hỷ, phẩm phục cao nhất' },
-    { id: 'bieu_dien', label: 'Người biểu diễn', desc: 'Sân khấu, nghệ thuật, phóng khoáng' },
-  ];
+  // Dịp là gốc: vai trò, khoảng trang trọng và phong cách được phép đều lấy theo dịp đang chọn
+  const luatDip = layLuatSuKien(contextSetup.eventId);
+  const vaiTroOptions = luatDip.vaiTro;
+  const [mucThap, mucCao] = luatDip.mucTrangTrong;
 
   const phongCachOptions: { id: PhongCach; label: string; desc: string }[] = [
     { id: 'nguyen_ban', label: 'Nguyên bản', desc: 'Siết chặt điển chế cổ truyền triều đại' },
@@ -43,7 +42,7 @@ export default function Step1BoiCanh() {
   const canProceed = Boolean(contextSetup.eventId && contextSetup.regionId);
 
   // Nhãn tóm tắt giá trị mặc định đang dùng khi đóng khối tuỳ chỉnh
-  const vaiTroLabel = vaiTroOptions.find((v) => v.id === contextSetup.vaiTro)?.label || 'Khách mời';
+  const vaiTroLabel = layVaiTro(contextSetup.eventId, contextSetup.vaiTro).label;
   const phongCachLabel = phongCachOptions.find((p) => p.id === contextSetup.phongCach)?.label || 'Tối giản';
   const nganSachLabel = nganSachOptions.find((n) => n.id === contextSetup.nganSach)?.label || 'Thuê cổ phục';
   const nguoiMacLabel = contextSetup.nguoiMac === 'nam' ? 'Người mặc Nam' : contextSetup.nguoiMac === 'nu' ? 'Người mặc Nữ' : 'Chưa nêu giới';
@@ -254,7 +253,8 @@ export default function Step1BoiCanh() {
                       value={contextSetup.mucTrangTrong}
                       onChange={(e) =>
                         store.setContextSetup({
-                          mucTrangTrong: Number(e.target.value) as 1 | 2 | 3 | 4 | 5,
+                          // Ngoài khoảng của dịp thì kẹp lại, store cũng kẹp thêm một lần
+                          mucTrangTrong: Math.min(mucCao, Math.max(mucThap, Number(e.target.value))) as MucTrangTrong,
                         })
                       }
                       className="w-full accent-[#A8322A] cursor-pointer"
@@ -266,6 +266,8 @@ export default function Step1BoiCanh() {
                           className={
                             contextSetup.mucTrangTrong === idx + 1
                               ? 'text-[#A8322A] font-bold'
+                              : idx + 1 < mucThap || idx + 1 > mucCao
+                              ? 'opacity-35 line-through'
                               : ''
                           }
                         >
@@ -277,7 +279,7 @@ export default function Step1BoiCanh() {
                 </div>
 
                 <p className="text-[11px] font-sans text-[#6E5439] italic pt-3 mt-2 border-t border-[#2C2A26]/10">
-                  Mặc định theo sự kiện, có thể kéo để ghi đè.
+                  Dịp này từ {layTenMucTrangTrong(mucThap)} tới {layTenMucTrangTrong(mucCao)}. Mặc định theo dịp và vai, kéo trong khoảng đó để chỉnh.
                 </p>
               </div>
 
@@ -368,10 +370,12 @@ export default function Step1BoiCanh() {
                 <div>
                   <div className="flex items-center justify-between pb-2 hairline-b">
                     <span className="micro-label text-[#2C2A26]">5. VAI TRÒ XUẤT HIỆN</span>
-                    <span className="micro-label text-[#6E5439]">4 VỊ THẾ</span>
+                    <span className="micro-label text-[#6E5439]">
+                      {vaiTroOptions.length > 1 ? `${vaiTroOptions.length} VAI CHO DỊP NÀY` : 'DỊP NÀY CÓ 1 VAI'}
+                    </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 pt-3">
+                  <div className={`grid gap-2 pt-3 ${vaiTroOptions.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
                     {vaiTroOptions.map((opt) => {
                       const isSelected = contextSetup.vaiTro === opt.id;
                       return (
@@ -409,22 +413,27 @@ export default function Step1BoiCanh() {
                   <div className="grid grid-cols-2 gap-2 pt-3">
                     {phongCachOptions.map((opt) => {
                       const isSelected = contextSetup.phongCach === opt.id;
+                      // Phong cách không hợp dịp thì khoá và nói lý do, không giấu đi
+                      const biKhoa = !luatDip.phongCach.includes(opt.id);
                       return (
                         <button
                           key={opt.id}
                           type="button"
+                          disabled={biKhoa}
                           onClick={() => store.setContextSetup({ phongCach: opt.id })}
-                          className={`p-2 border text-left cursor-pointer transition-colors ${
-                            isSelected
-                              ? 'border-[#A8322A] bg-[#F2EDE3]'
-                              : 'border-[#2C2A26]/12 bg-[#FBF8F2] hover:border-[#2C2A26]/30'
+                          className={`p-2 border text-left transition-colors ${
+                            biKhoa
+                              ? 'border-[#2C2A26]/8 bg-[#FBF8F2] opacity-45 cursor-not-allowed'
+                              : isSelected
+                              ? 'border-[#A8322A] bg-[#F2EDE3] cursor-pointer'
+                              : 'border-[#2C2A26]/12 bg-[#FBF8F2] hover:border-[#2C2A26]/30 cursor-pointer'
                           }`}
                         >
                           <span className="font-display text-xs text-[#2C2A26] block leading-tight">
                             {opt.label}
                           </span>
                           <span className="text-[9px] font-sans text-[#6E5439] block mt-0.5 truncate">
-                            {opt.desc}
+                            {biKhoa ? luatDip.lyDoKhoaPhongCach : opt.desc}
                           </span>
                         </button>
                       );

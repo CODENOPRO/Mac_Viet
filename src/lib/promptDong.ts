@@ -1,5 +1,6 @@
 import { EventContext, LookState, UserContextSetup } from '../types';
 import { REGIONS } from '../data/regions';
+import { layVaiTro } from '../data/boiCanhSuKien';
 
 // Prompt động: mỗi lựa chọn ở bước bối cảnh điều khiển đúng một phần của bức ảnh.
 // Phần tiếng Anh gửi cho model; phần tiếng Việt hiện cho người dùng thấy biến nào đang chạy.
@@ -23,7 +24,7 @@ const SU_KIEN: Record<string, [string, string]> = {
   E05: ['solemn, respectful mood for an ancestral ceremony; calm and serious expression', 'Giỗ: nghiêm trang'],
   E06: ["warm, tidy, approachable mood for meeting a partner's family; a soft smile", 'Ra mắt: chỉn chu'],
   E07: ['relaxed, natural everyday mood; an easy slight smile', 'Phố cổ: thoải mái'],
-  E08: ['confident, expressive stage presence', 'Biểu diễn: tự tin'],
+  E08: ['lively, festive cultural-event mood', 'Sự kiện văn hoá: sôi nổi'],
 };
 
 const DANG_TRANG_TRONG =
@@ -50,13 +51,6 @@ const PHONG_CACH: Record<UserContextSetup['phongCach'], { huong: string; dang: s
     dang: 'expressive confident stance, chin slightly raised, shoulders open',
     vi: 'Sân khấu: ấn tượng',
   },
-};
-
-const VAI_TRO: Record<UserContextSetup['vaiTro'], [string, string]> = {
-  chu_nha: ['bearing of a welcoming host', 'Chủ nhà: đón tiếp'],
-  khach_moi: ['understated bearing of a guest', 'Khách mời: nhã nhặn'],
-  co_dau_chu_re: ['the most ceremonial bearing of a bride or groom, upright and poised', 'Cô dâu chú rể: trang trọng nhất'],
-  bieu_dien: ['poised bearing of a performer about to go on stage', 'Người biểu diễn: sẵn sàng lên sân khấu'],
 };
 
 const MUC_TRANG_TRONG: Record<number, [string, string]> = {
@@ -146,14 +140,15 @@ export function dungBoiCanhAnh(ctx: UserContextSetup, suKien: EventContext | und
     tomTat.push('Mưa: ánh sáng dịu, lạnh');
   }
 
-  const vt = VAI_TRO[ctx.vaiTro] || VAI_TRO.khach_moi;
-  tomTat.push(vt[1]);
+  // Vai trò thuộc về dịp: cùng là 'khách' nhưng khách đám cưới khác khách dự hội
+  const vt = layVaiTro(suKien?.id || ctx.eventId, ctx.vaiTro);
+  tomTat.push(`Vai: ${vt.label}`);
 
   const ns = NGAN_SACH[ctx.nganSach] || NGAN_SACH.thue;
   tomTat.push(ns[1]);
 
   return {
-    khongKhi: `${sk[0]}; ${vt[0]}`,
+    khongKhi: `${sk[0]}; ${vt.prompt}`,
     dangDung,
     anhSang,
     chatLieu: vai ? `${VAI[vai] || vai}, ${doDay}` : doDay,
