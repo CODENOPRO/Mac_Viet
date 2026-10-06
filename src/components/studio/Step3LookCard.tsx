@@ -206,7 +206,7 @@ export default function Step3LookCard() {
             nienDaiNoiBat: lookState.thuongY?.nienDai || 'Chưa xác định',
             aiTungMac: lookState.thuongY?.dungKhiNao.join(', ') || 'Sĩ phu, nhân dân trong các dịp lễ tết và giao tế',
             yNghiaHoaVan: 'Hoa văn thanh nhã theo quy thức cổ truyền.',
-            sourceIds: lookState.thuongY?.sourceIds || ['S01', 'S03'],
+            sourceIds: lookState.thuongY?.sourceIds || [],
             doChacChan: lookState.thuongY?.doChacChan || 'da_xac_lap',
           });
         }
@@ -654,7 +654,7 @@ export default function Step3LookCard() {
                 {storyData?.cauChuyen || lookState.thuongY?.cauChuyen}
                 {lookState.hoaVan && (
                   <span className="block mt-2 text-[#6E5439]">
-                    Hoa văn "{lookState.hoaVan.ten}" được thêu ứng biến theo tích cổ: {lookState.hoaVan.yNghia}
+                    Hoa văn {lookState.hoaVan.ten}: {lookState.hoaVan.yNghia}.
                   </span>
                 )}
               </div>

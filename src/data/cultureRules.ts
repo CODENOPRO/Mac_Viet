@@ -60,8 +60,10 @@ export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-02',
     ten: 'Hoa văn rồng năm móng trên thường phục',
-    dieuKien: 'Hoa văn rồng năm móng xuất hiện trên trang phục dân gian hoặc thường phục',
-    kiemTra: (look: LookState): boolean => {
+    dieuKien: 'Hoa văn rồng năm móng trên trang phục của người thường; chỉ người biểu diễn tái hiện trên sân khấu được miễn',
+    kiemTra: (look: LookState, boiCanh?: EventContext): boolean => {
+      // Miễn đúng một trường hợp: người biểu diễn ở dịp biểu diễn (tiết mục tái hiện cung đình)
+      if (boiCanh?.id === 'E08' && boiCanh.vaiTro === 'bieu_dien') return false;
       return look.hoaVan?.id === 'M08';
     },
     mucDo: 'do',

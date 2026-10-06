@@ -76,6 +76,10 @@ export interface Motif {
   canThan: boolean;
   mucDo?: 'do' | 'vang' | 'binh_thuong';
   sourceIds?: string[];
+  /** Cách app dựng hoa văn trong ảnh (tiếng Anh, gửi model). Là quy ước dựng ảnh, không phải khẳng định lịch sử */
+  moTaHinhAnh?: string;
+  /** Hoa văn nằm ở đâu trên áo trong ảnh dựng, hiện trên thẻ chọn */
+  viTri?: string;
 }
 
 export interface NamedColor {

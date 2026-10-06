@@ -126,8 +126,9 @@ export function chayRagCucBo(cauHoi: string): RagResult {
         id: m.id,
         loai: 'motif',
         ten: `Hoa văn ${m.ten}`,
-        moTa: `${m.yNghia}. Tầng lớp: ${m.tangLop}.`,
-        sourceIds: m.sourceIds || ['S01', 'S03'],
+        moTa: `${m.yNghia}. Tầng lớp sử dụng: ${m.tangLop === 'hoang_gia' ? 'hoàng gia, cung đình' : 'dân gian'}.`,
+        // Hoa văn chưa gắn nguồn thì để trống, không mượn nguồn của mục khác
+        sourceIds: m.sourceIds || [],
         score,
       });
     }

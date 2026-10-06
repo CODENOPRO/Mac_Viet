@@ -878,6 +878,17 @@ export default function Step3PhoiDo() {
                       >
                         <span className="font-display text-sm font-medium text-[#2C2A26] block">{m.ten}</span>
                         <p className="font-sans text-xs text-[#6E5439] mt-0.5">{m.yNghia}</p>
+                        {m.viTri && (
+                          <p className="font-mono text-[10px] text-[#6E5439]/80 mt-1">Trong ảnh: {m.viTri}</p>
+                        )}
+                        {/* Báo trước, khỏi để người dùng chọn xong mới thấy cờ */}
+                        {m.canThan && (
+                          <p className="font-sans text-[11px] text-[#A8322A] mt-1 leading-snug">
+                            {m.mucDo === 'do'
+                              ? 'Hoa văn của hoàng đế: bị cảnh báo đỏ, chỉ người biểu diễn tái hiện được miễn.'
+                              : 'Hoa văn phẩm phục cung đình: bị cảnh báo vàng ở dịp từ mức Có lễ trở xuống, hoặc khi đi với áo tứ thân.'}
+                          </p>
+                        )}
                       </button>
                     );
                   })}
