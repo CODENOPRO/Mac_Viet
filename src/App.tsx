@@ -9,6 +9,7 @@ import LookbookScreen from './components/studio/LookbookScreen';
 import CuNgheScreen from './components/studio/CuNgheScreen';
 import CultureRulesScreen from './components/studio/CultureRulesScreen';
 import DebugTelemetryModal from './components/shared/DebugTelemetryModal';
+import KhungChongLoi from './components/shared/KhungChongLoi';
 
 export default function App() {
   const { currentScreen } = useStore();
@@ -63,7 +64,9 @@ export default function App() {
 
       {/* THẾ GIỚI 1: LANDING TOÀN CẢNH */}
       {currentScreen === 'landing' && (
-        <Landing />
+        <KhungChongLoi tenKhuVuc="Trang giới thiệu">
+          <Landing />
+        </KhungChongLoi>
       )}
 
       {/* THẾ GIỚI 2: KHÔNG GIAN THAO TÁC ỨNG DỤNG (XƯỞNG PHỐI, BẢO TÀNG, LOOKBOOK, CỬ NGHỆ) */}
@@ -76,25 +79,33 @@ export default function App() {
           <main className="flex-1 w-full transition-opacity duration-180 ease-out">
             {currentScreen === 'studio' && (
               <div className="animate-in fade-in duration-180">
-                <StudioWorkflow />
+                <KhungChongLoi tenKhuVuc="Xưởng phối">
+                  <StudioWorkflow />
+                </KhungChongLoi>
               </div>
             )}
 
             {currentScreen === 'lookbook' && (
               <div className="animate-in fade-in duration-180">
-                <LookbookScreen />
+                <KhungChongLoi tenKhuVuc="Lookbook">
+                  <LookbookScreen />
+                </KhungChongLoi>
               </div>
             )}
 
             {currentScreen === 'cu_nghe' && (
               <div className="animate-in fade-in duration-180">
-                <CuNgheScreen />
+                <KhungChongLoi tenKhuVuc="Cụ Nghệ">
+                  <CuNgheScreen />
+                </KhungChongLoi>
               </div>
             )}
 
             {currentScreen === 'culture_rules' && (
               <div className="animate-in fade-in duration-180">
-                <CultureRulesScreen />
+                <KhungChongLoi tenKhuVuc="Luật văn hoá">
+                  <CultureRulesScreen />
+                </KhungChongLoi>
               </div>
             )}
           </main>

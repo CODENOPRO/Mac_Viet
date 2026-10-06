@@ -6,6 +6,7 @@ import { boMaNoiBoSau } from './boMaNoiBo';
 import { taoAi, aiSanSang, coKhoaTrucTiep } from './aiClient';
 import { LookState, EventContext, CultureFlag } from '../types';
 import { ketLuanSoSanh } from './diemSo';
+import { layVaiTro } from '../data/boiCanhSuKien';
 
 // =============================================================================
 // 1. CẤU HÌNH API KEY VÀ KHỞI TẠO SDK @google/genai
@@ -372,6 +373,7 @@ export async function cultureCheck(
     `${JSON.stringify(ketQuaRuleEngine.luatViPham.map((l) => l.rule))}\n\n` +
     `=== BỐI CẢNH VÀ TRANG PHỤC ĐANG PHỐI ===\n` +
     `Sự kiện: ${boiCanh.ten} (Trang trọng: ${boiCanh.mucTrangTrongYeuCau}/5)\n` +
+    `Vai của người dùng trong dịp: ${boiCanh.vaiTro ? layVaiTro(boiCanh.id, boiCanh.vaiTro).label : 'chưa nêu'}\n` +
     `Thượng y: ${look.thuongY?.ten || 'chưa chọn'}\n` +
     `Hạ y: ${look.haY?.ten || 'chưa chọn'}\n` +
     `Thủ phục: ${look.thuPhuc?.ten || 'chưa chọn'}\n` +
@@ -402,6 +404,8 @@ export async function cultureCheck(
       },
       flagIds: ketQuaRuleEngine.luatViPham.map((l) => l.rule.id),
       eventId: boiCanh.id,
+      // Cùng bộ đồ, cùng dịp nhưng khác vai thì lời giải thích khác, không dùng lại bản đệm
+      vaiTro: boiCanh.vaiTro,
     },
     systemInstruction: SYSTEM_INSTRUCTION_SHARED,
     prompt,

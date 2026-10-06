@@ -69,3 +69,15 @@ export function ketLuanSoSanh(
     : `${nhi.ten} không cao hơn ở chỉ số nào; chỉ nên chọn nếu bạn thích kiểu dáng của nó hơn.`;
   return { lookTotNhat: best.ten, lyDo, khiNaoChonCaiKia };
 }
+
+// Áo nhiều lớp, thân dài, tay thụng; áo mỏng một lớp. Theo cấu trúc mô tả trong garments.ts.
+const AO_DAY = ['G01', 'G02', 'G05', 'G06'];
+const AO_MONG = ['G08', 'G09'];
+
+/** Nhận xét thời tiết cho một bộ: đọc nhiệt độ người dùng nhập, không gán cứng theo kiểu áo. */
+export function nhanXetThoiTiet(look: LookState, nhietDo: number): string {
+  const ao = look.thuongY?.id || '';
+  if (nhietDo > 32 && AO_DAY.includes(ao)) return `Nóng: áo nhiều lớp, dễ ngột ngạt ở ${nhietDo}°C`;
+  if (nhietDo < 18 && AO_MONG.includes(ao)) return `Lạnh: áo mỏng một lớp, nên mặc thêm lớp trong ở ${nhietDo}°C`;
+  return `Hợp ${nhietDo}°C`;
+}

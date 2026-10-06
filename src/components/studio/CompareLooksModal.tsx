@@ -7,7 +7,7 @@ import { tinhHaiHoa, ColorInputItem } from '../../lib/colorHarmony';
 import { kiemTraVanHoa } from '../../lib/cultureGuard';
 import { soSanhLook, LookComparisonInput, SoSanhLookResponse } from '../../lib/gemini';
 import { LookState, EventContext, CultureFlag, UserContextSetup } from '../../types';
-import { mauThucTeCuaLook, diemHopBoiCanh, diemVanHoa, ketLuanSoSanh } from '../../lib/diemSo';
+import { mauThucTeCuaLook, diemHopBoiCanh, diemVanHoa, ketLuanSoSanh, nhanXetThoiTiet } from '../../lib/diemSo';
 
 export interface LookToCompare {
   id: string;
@@ -116,12 +116,8 @@ export default function CompareLooksModal({
       // Mức trang trọng
       const mucTrangTrong = lookState.thuongY?.mucTrangTrong || 3;
 
-      // Hợp thời tiết
-      const topId = lookState.thuongY?.id;
-      let hopThoiTiet = 'Thoáng nhẹ, hợp bốn mùa';
-      if (topId === 'G09') hopThoiTiet = 'Rất thoáng mát (Nam Bộ / Hè)';
-      else if (topId === 'G06') hopThoiTiet = 'Dày dặn, ấm áp (Thu - Đông)';
-      else if (topId === 'G05' || topId === 'G01') hopThoiTiet = 'Kín đáo, hợp ngày se lạnh';
+      // Hợp thời tiết: theo nhiệt độ của bối cảnh đang chấm (lib/diemSo.ts)
+      const hopThoiTiet = nhanXetThoiTiet(lookState, contextSetup.nhietDo);
 
       // Màu chính
       const matchColor = TRADITIONAL_COLORS.find(
