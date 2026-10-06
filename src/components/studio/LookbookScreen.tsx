@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useStore, store } from '../../lib/store';
 import CompareLooksModal, { LookToCompare } from './CompareLooksModal';
 import { EVENTS } from '../../data/events';
+import { boiCanhHieuLuc } from '../../data/boiCanhSuKien';
 import { SAMPLE_LOOKS } from '../../data/sampleLooks';
 import { layTenMau } from '../../data/palettes';
 import { LookCardData } from '../../types';
@@ -420,7 +421,9 @@ export default function LookbookScreen() {
         onClose={() => setCompareModalOpen(false)}
         initialLooks={selectedLooksToCompare}
         eventContext={
-          EVENTS.find((e) => e.id === lookbook[0]?.eventContextId) || selectedEvent
+          lookbook[0]?.eventContextId
+            ? boiCanhHieuLuc(lookbook[0].eventContextId, lookbook[0].vaiTro)
+            : selectedEvent
         }
       />
     </div>

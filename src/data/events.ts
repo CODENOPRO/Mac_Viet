@@ -21,11 +21,11 @@ export const EVENTS: EventContext[] = [
   },
   {
     id: 'E03',
-    ten: 'Đám cưới, ăn hỏi, vai khách',
-    moTa: 'Tham dự ngày vui của người thân hoặc bạn bè với tư cách khách mời.',
+    ten: 'Đám cưới, ăn hỏi',
+    moTa: 'Dự ngày vui của người thân, bạn bè: làm khách, người nhà hay đội bê tráp.',
     mucTrangTrongYeuCau: 4,
     mauNenDung: ['#F2EDE3', '#16243A', '#3F6B5A', '#6E5439'],
-    mauNenTranh: ['trắng toàn phần', 'đỏ rực', 'vàng rực'],
+    mauNenTranh: ['trắng toàn phần', 'đỏ rực (với khách mời)', 'vàng rực (với khách mời)'],
     luuY: 'Tránh lấn vai cô dâu chú rể là nguyên tắc số một.'
   },
   {

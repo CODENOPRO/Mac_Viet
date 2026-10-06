@@ -692,7 +692,7 @@ export default function Step3PhoiDo() {
                   {colorHarmonyResult.goiYSua[0]}
                 </p>
                 <p className="font-sans text-xs text-[#6E5439]">
-                  Mức trang trọng của áo: {TEN_MUC[lookState.thuongY?.mucTrangTrong ?? 3]}. Bạn chọn: {TEN_MUC[mucYeuCau]}.
+                  Mức trang trọng của áo: {TEN_MUC[lookState.thuongY?.mucTrangTrong ?? 3]}. Dịp yêu cầu: {TEN_MUC[mucYeuCau]}.
                 </p>
                 <p className="font-sans text-xs text-[#6E5439]">
                   Cờ văn hoá chấm trên lựa chọn của bạn, không chấm trên ảnh.

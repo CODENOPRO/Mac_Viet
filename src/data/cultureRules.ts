@@ -137,9 +137,10 @@ export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-04',
     ten: 'Màu vàng hoàng kim chiếm tỷ lệ lớn',
-    dieuKien: 'Màu vàng hoàng kim chiếm trên một nửa bộ trang phục, ngoài bối cảnh biểu diễn',
+    dieuKien: 'Màu vàng hoàng kim chiếm trên một nửa bộ trang phục, trừ người biểu diễn trên sân khấu',
     kiemTra: (look: LookState, boiCanh?: EventContext): boolean => {
-      if (boiCanh?.id === 'E08') return false;
+      // Bối cảnh biểu diễn là người đứng trên sân khấu, không phải khán giả hay người dẫn
+      if (boiCanh?.id === 'E08' && (!boiCanh.vaiTro || boiCanh.vaiTro === 'bieu_dien')) return false;
       return look.mauChinh?.toLowerCase() === '#c39a27';
     },
     mucDo: 'vang',
@@ -248,6 +249,8 @@ export const CULTURE_RULES: CultureRule[] = [
     dieuKien: 'Khách mời mặc màu đỏ điều hoặc vàng hoàng kim rực trong lễ cưới',
     kiemTra: (look: LookState, boiCanh?: EventContext): boolean => {
       if (boiCanh?.id !== 'E03') return false;
+      // Luật này dành cho khách mời. Người nhà hai họ, đội bê tráp là một phần của lễ, mặc theo nếp hai họ.
+      if (boiCanh.vaiTro && boiCanh.vaiTro !== 'khach_moi') return false;
       const isDieuOrHoang = look.mauChinh === '#A8322A' || look.mauChinh === '#C39A27' || look.mauChinh === '#E2C15E';
       return isDieuOrHoang;
     },

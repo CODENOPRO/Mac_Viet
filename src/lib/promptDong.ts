@@ -19,7 +19,7 @@ export interface BoiCanhAnh {
 const SU_KIEN: Record<string, [string, string]> = {
   E01: ['festive, warm and joyful Lunar New Year mood; a gentle natural smile', 'Tết: không khí ấm, vui'],
   E02: ['youthful, fresh graduation-photo mood; a relaxed confident smile', 'Kỷ yếu: trẻ trung'],
-  E03: ['elegant, polite wedding-guest mood; a composed gentle smile; dressed so as not to outshine the couple', 'Cưới: nhã nhặn, không lấn át'],
+  E03: ['joyful, elegant wedding-day mood; a composed gentle smile', 'Cưới hỏi: vui, nhã nhặn'],
   E04: ['serene, reverent mood for a pagoda visit; calm expression without a broad smile; modest posture', 'Lễ chùa: trang nghiêm'],
   E05: ['solemn, respectful mood for an ancestral ceremony; calm and serious expression', 'Giỗ: nghiêm trang'],
   E06: ["warm, tidy, approachable mood for meeting a partner's family; a soft smile", 'Ra mắt: chỉn chu'],
@@ -65,12 +65,6 @@ const NGUOI_MAC: Record<UserContextSetup['nguoiMac'], [string, string]> = {
   nam: ["cut every garment the way it is traditionally made for men: straighter and looser through the body", 'Dáng may nam'],
   nu: ['cut every garment the way it is traditionally made for women: more fitted at the waist with a long graceful line', 'Dáng may nữ'],
   khong_neu: ['', ''],
-};
-
-const NGAN_SACH: Record<UserContextSetup['nganSach'], [string, string]> = {
-  may_do: ['bespoke made-to-measure fit with exact sleeve and hem length', 'May đo: vừa khít'],
-  thue: ['classic rental-costume fit, standard length, very slightly roomy', 'Thuê: dáng chuẩn'],
-  mua_san: ['clean ready-to-wear fit', 'Mua sẵn: dáng may sẵn'],
 };
 
 // Tên vải tiếng Việt sang mô tả tiếng Anh cho model.
@@ -144,16 +138,13 @@ export function dungBoiCanhAnh(ctx: UserContextSetup, suKien: EventContext | und
   const vt = layVaiTro(suKien?.id || ctx.eventId, ctx.vaiTro);
   tomTat.push(`Vai: ${vt.label}`);
 
-  const ns = NGAN_SACH[ctx.nganSach] || NGAN_SACH.thue;
-  tomTat.push(ns[1]);
-
   return {
     khongKhi: `${sk[0]}; ${vt.prompt}`,
     dangDung,
     anhSang,
     chatLieu: vai ? `${VAI[vai] || vai}, ${doDay}` : doDay,
     hoanThien: muc[0],
-    dangMay: [NGUOI_MAC[ctx.nguoiMac]?.[0], ns[0]].filter(Boolean).join('; '),
+    dangMay: NGUOI_MAC[ctx.nguoiMac]?.[0] || '',
     huongNgheThuat: pc.huong,
     tomTat,
   };

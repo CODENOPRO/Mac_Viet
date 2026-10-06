@@ -13,7 +13,7 @@ import {
   StudioStep,
 } from '../types';
 import { EVENTS } from '../data/events';
-import { chuanHoaBoiCanh } from '../data/boiCanhSuKien';
+import { chuanHoaBoiCanh, boiCanhHieuLuc } from '../data/boiCanhSuKien';
 import { MOTIFS } from '../data/motifs';
 import { luuAnhLook, docAnhLook, xoaAnhLook } from './anhLookbook';
 import { GARMENTS } from '../data/garments';
@@ -88,17 +88,16 @@ const initialLookState: LookState = {
   isGopChungTayBac: false,
 };
 
-const initialContextSetup: UserContextSetup = {
+const initialContextSetup: UserContextSetup = chuanHoaBoiCanh({
   eventId: 'E01',
   regionId: 'R01',
   mucTrangTrong: 3,
   nhietDo: 24,
   thoiTietMua: false,
-  vaiTro: 'chu_nha',
+  vaiTro: 'di_chuc_tet',
   phongCach: 'nguyen_ban',
-  nganSach: 'thue',
   nguoiMac: 'khong_neu',
-};
+});
 
 // Quản lý bộ sưu tập cá nhân trong localStorage - TUYỆT ĐỐI KHÔNG GIEO LOOK MẪU
 const USER_LOOKBOOK_STORAGE_KEY = 'macviet_user_lookbook';
@@ -138,7 +137,8 @@ function persistUserLookbook(looks: LookCardData[]) {
 
 let state: AppStoreState = {
   currentScreen: getScreenFromHash(),
-  selectedEvent: EVENTS[0], // E01: Tết và du xuân
+  // Bối cảnh hiệu lực: dịp kèm vai, mức trang trọng tính theo vai
+  selectedEvent: boiCanhHieuLuc(initialContextSetup.eventId, initialContextSetup.vaiTro),
   selectedRegion: REGIONS[0], // R01: Bắc Bộ
   contextSetup: initialContextSetup,
   lookState: initialLookState,
@@ -201,6 +201,20 @@ function emitChange() {
   for (const listener of listeners) {
     listener();
   }
+}
+
+/**
+ * Một nguồn sự thật cho bối cảnh: contextSetup.
+ * selectedEvent (bối cảnh hiệu lực) và selectedRegion luôn suy ra từ nó, không đặt riêng,
+ * để màn chọn bối cảnh, luật văn hoá, gợi ý và ảnh mặc thử không bao giờ lệch nhau.
+ */
+function voiBoiCanh(partial: Partial<UserContextSetup>) {
+  const contextSetup = chuanHoaBoiCanh({ ...state.contextSetup, ...partial });
+  return {
+    contextSetup,
+    selectedEvent: boiCanhHieuLuc(contextSetup.eventId, contextSetup.vaiTro),
+    selectedRegion: REGIONS.find((r) => r.id === contextSetup.regionId) || state.selectedRegion,
+  };
 }
 
 export const store = {
@@ -271,12 +285,12 @@ export const store = {
   },
 
   setSelectedEvent(event: EventContext) {
-    state = { ...state, selectedEvent: event };
+    state = { ...state, ...voiBoiCanh({ eventId: event.id }) };
     emitChange();
   },
 
   setSelectedRegion(region: Region) {
-    state = { ...state, selectedRegion: region };
+    state = { ...state, ...voiBoiCanh({ regionId: region.id }) };
     emitChange();
   },
 
@@ -284,7 +298,7 @@ export const store = {
     state = {
       ...state,
       // Dịp là gốc: vai trò, mức trang trọng, phong cách luôn được đưa về tổ hợp hợp với dịp
-      contextSetup: chuanHoaBoiCanh(state.contextSetup, { ...state.contextSetup, ...partial }),
+      ...voiBoiCanh(partial),
       // Bối cảnh đổi thì prompt ảnh đổi, nên ảnh đang có không còn khớp
       isTryOnStale: state.activeTryOnImage ? true : state.isTryOnStale,
     };
@@ -382,8 +396,8 @@ export const store = {
       ...state,
       currentScreen: 'studio',
       studioStep: 3,
-      selectedEvent: newEvent,
-      selectedRegion: newRegion,
+      // Đổi qua voiBoiCanh để màn bối cảnh, luật và ảnh cùng thấy đúng dịp, vùng của ví dụ
+      ...voiBoiCanh({ eventId: newEvent.id, regionId: newRegion.id }),
       lookState: nextLook,
       isTryOnStale: true,
     };
@@ -489,6 +503,7 @@ export const store = {
       ten: ten.trim() || 'Bộ Phối Mặc Việt',
       ngayTao: new Date().toISOString().split('T')[0],
       eventContextId: state.selectedEvent.id,
+      vaiTro: state.contextSetup.vaiTro,
       look: { ...state.lookState },
       ghiChu: ghiChu || state.selectedEvent.ten,
       coAnh: Boolean(anh),
@@ -540,8 +555,8 @@ export const store = {
     state = {
       ...state,
       lookState: look,
-      selectedEvent: dip,
-      contextSetup: chuanHoaBoiCanh(state.contextSetup, { ...state.contextSetup, eventId: dip.id }),
+      // Mở lại đúng dịp và vai lúc lưu; bản lưu cũ chưa có vai thì về vai mặc định của dịp
+      ...voiBoiCanh({ eventId: dip.id, vaiTro: item.vaiTro ?? (dip.id === state.contextSetup.eventId ? state.contextSetup.vaiTro : undefined) }),
       activeTryOnImage: null,
       lastTriedLook: null,
       isTryOnStale: false,

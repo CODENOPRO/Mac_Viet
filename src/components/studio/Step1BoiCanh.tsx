@@ -6,47 +6,32 @@ import { GARMENTS } from '../../data/garments';
 
 const MA_VUNG: Record<string, RegionId> = { R01: 'bac', R02: 'trung', R03: 'nam', R04: 'tay_bac' };
 import { layTenMucTrangTrong } from '../../data/palettes';
-import { layLuatSuKien, layVaiTro, MucTrangTrong } from '../../data/boiCanhSuKien';
-import { PhongCach, NganSach, RegionId, formatStudioStepLabel } from '../../types';
+import { layLuatSuKien, layVaiTro, lyDoKhoaPhongCach } from '../../data/boiCanhSuKien';
+import { PhongCach, RegionId, formatStudioStepLabel } from '../../types';
 
 export default function Step1BoiCanh() {
   const { contextSetup, selectedEvent, selectedRegion } = useStore();
   const [isCustomOpen, setIsCustomOpen] = useState(false);
 
-  // Dịp là gốc: vai trò, khoảng trang trọng và phong cách được phép đều lấy theo dịp đang chọn
+  // Dịp là gốc: dịp quyết định có những vai nào; vai quyết định mức trang trọng và phong cách được mở
   const luatDip = layLuatSuKien(contextSetup.eventId);
   const vaiTroOptions = luatDip.vaiTro;
-  const [mucThap, mucCao] = luatDip.mucTrangTrong;
+  const vaiDangChon = layVaiTro(contextSetup.eventId, contextSetup.vaiTro);
 
+  // Mô tả đúng điều code làm với từng phong cách (xem lib/cultureGuard.ts), không hứa hơn
   const phongCachOptions: { id: PhongCach; label: string; desc: string }[] = [
-    { id: 'nguyen_ban', label: 'Nguyên bản', desc: 'Siết chặt điển chế cổ truyền triều đại' },
-    { id: 'toi_gian', label: 'Tối giản', desc: 'Phom dáng chuẩn, màu sắc nền nã' },
-    { id: 'remix_pho', label: 'Remix phố', desc: 'Nới luật phụ kiện giày, túi dạo phố' },
-    { id: 'san_khau', label: 'Sân khấu', desc: 'Cho phép màu nổi bật, hoa văn lớn' },
-  ];
-
-  const nganSachOptions: { id: NganSach; label: string }[] = [
-    { id: 'thue', label: 'Thuê cổ phục' },
-    { id: 'may_do', label: 'May đo thủ công' },
-    { id: 'mua_san', label: 'Mua sẵn cách tân' },
-  ];
-
-  const trangTrongLabels = [
-    'Thường ngày',
-    'Dạo phố',
-    'Có lễ',
-    'Trang trọng',
-    'Đại lễ',
+    { id: 'nguyen_ban', label: 'Nguyên bản', desc: 'Giữ đủ mọi luật, ảnh dựng đúng như hiện vật' },
+    { id: 'toi_gian', label: 'Tối giản', desc: 'Giữ đủ mọi luật, ảnh tiết chế màu và phụ kiện' },
+    { id: 'remix_pho', label: 'Remix phố', desc: 'Phối khác bộ, khác giới hạ từ đỏ xuống vàng' },
+    { id: 'san_khau', label: 'Sân khấu', desc: 'Lệch vùng, lệch thời kỳ chỉ còn là thông tin' },
   ];
 
   const canProceed = Boolean(contextSetup.eventId && contextSetup.regionId);
 
   // Nhãn tóm tắt giá trị mặc định đang dùng khi đóng khối tuỳ chỉnh
-  const vaiTroLabel = layVaiTro(contextSetup.eventId, contextSetup.vaiTro).label;
-  const phongCachLabel = phongCachOptions.find((p) => p.id === contextSetup.phongCach)?.label || 'Tối giản';
-  const nganSachLabel = nganSachOptions.find((n) => n.id === contextSetup.nganSach)?.label || 'Thuê cổ phục';
+  const phongCachLabel = phongCachOptions.find((p) => p.id === contextSetup.phongCach)?.label || 'Nguyên bản';
   const nguoiMacLabel = contextSetup.nguoiMac === 'nam' ? 'Người mặc Nam' : contextSetup.nguoiMac === 'nu' ? 'Người mặc Nữ' : 'Chưa nêu giới';
-  const summaryLine = `${nguoiMacLabel} · ${layTenMucTrangTrong(contextSetup.mucTrangTrong)} · ${contextSetup.nhietDo}°C ${contextSetup.thoiTietMua ? 'có mưa' : 'khô ráo'} · ${vaiTroLabel} · ${phongCachLabel} · ${nganSachLabel}`;
+  const summaryLine = `${nguoiMacLabel} · ${contextSetup.nhietDo}°C ${contextSetup.thoiTietMua ? 'có mưa' : 'khô ráo'} · ${phongCachLabel}`;
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-150 select-none">
@@ -56,7 +41,7 @@ export default function Step1BoiCanh() {
           Bạn mặc cho dịp nào, ở vùng nào?
         </h2>
         <p className="text-sm font-sans text-[#6E5439] mt-1 max-w-xl">
-          Chọn hai thứ này là đủ để bắt đầu. Các tuỳ chọn khác đã có sẵn giá trị mặc định.
+          Chọn dịp và vùng là đủ để bắt đầu. Vai của bạn trong dịp quyết định mức trang trọng và luật văn hoá áp dụng.
         </p>
       </div>
 
@@ -209,6 +194,52 @@ export default function Step1BoiCanh() {
         </div>
       </div>
 
+      {/* 3. VAI CỦA BẠN TRONG DỊP: luôn hiện, vì vai quyết định mức trang trọng và luật áp dụng */}
+      <div className="border border-[#2C2A26]/18 bg-[#FBF8F2] p-5 md:p-6 corner-mark">
+        <div className="flex items-center justify-between pb-3 hairline-b">
+          <span className="micro-label text-[#2C2A26]">3. VAI CỦA BẠN TRONG DỊP NÀY</span>
+          <span className="micro-label text-[#6E5439]">
+            {vaiTroOptions.length > 1 ? `${vaiTroOptions.length} VAI` : 'DỊP NÀY CÓ 1 VAI'}
+          </span>
+        </div>
+
+        <div className={`grid gap-3 pt-4 ${vaiTroOptions.length > 1 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1'}`}>
+          {vaiTroOptions.map((opt) => {
+            const isSelected = vaiDangChon.id === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => store.setContextSetup({ vaiTro: opt.id })}
+                className={`p-3 border text-left cursor-pointer transition-colors ${
+                  isSelected
+                    ? 'border-[#A8322A] bg-[#F2EDE3]'
+                    : 'border-[#2C2A26]/12 bg-[#FBF8F2] hover:border-[#2C2A26]/40'
+                }`}
+              >
+                <span className="font-display text-base text-[#2C2A26] block leading-snug">{opt.label}</span>
+                <span className="text-xs font-sans text-[#2C2A26]/75 block mt-0.5">{opt.desc}</span>
+                <span className="font-mono text-[10px] text-[#6E5439] block mt-1.5">
+                  {layTenMucTrangTrong(opt.mucTrangTrong)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Mức trang trọng là hệ quả của dịp và vai, không phải một lựa chọn */}
+        <p className="text-xs font-sans text-[#2C2A26] mt-4 leading-relaxed">
+          Mức trang trọng dịp yêu cầu:{' '}
+          <span className="font-bold text-[#A8322A]">
+            {layTenMucTrangTrong(vaiDangChon.mucTrangTrong)} ({vaiDangChon.mucTrangTrong}/5)
+          </span>
+          . Mức này do dịp «{selectedEvent.ten}» và vai «{vaiDangChon.label}» quyết định, không kéo được. Muốn trang trọng hơn, bạn chọn món trang trọng hơn ở bước phối đồ; app so mức của bộ đồ với mức này.
+        </p>
+        {luatDip.ghiChuPhamVi && (
+          <p className="text-[11px] font-sans text-[#6E5439] italic mt-1.5">{luatDip.ghiChuPhamVi}</p>
+        )}
+      </div>
+
       {/* KHỐI THU GỌN: TUỲ CHỈNH THÊM (CHỨA 5 THAM SỐ CÒN LẠI) */}
       <div className="border border-[#2C2A26]/18 bg-[#FBF8F2] corner-mark overflow-hidden shadow-2xs">
         <button
@@ -233,61 +264,12 @@ export default function Step1BoiCanh() {
           style={{ gridTemplateRows: isCustomOpen ? '1fr' : '0fr' }}
         >
           <div className="min-h-0 overflow-hidden">
-            <div className="p-5 md:p-6 border-t border-[#2C2A26]/12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 bg-[#FBF8F2]">
-              {/* 3. MỨC TRANG TRỌNG */}
-              <div className="border border-[#2C2A26]/12 bg-[#F2EDE3]/50 p-4 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between pb-2 hairline-b">
-                    <span className="micro-label text-[#2C2A26]">3. MỨC TRANG TRỌNG</span>
-                    <span className="font-mono text-xs text-[#A8322A] font-bold">
-                      {layTenMucTrangTrong(contextSetup.mucTrangTrong)}
-                    </span>
-                  </div>
-
-                  <div className="pt-4">
-                    <input
-                      type="range"
-                      min={1}
-                      max={5}
-                      step={1}
-                      value={contextSetup.mucTrangTrong}
-                      onChange={(e) =>
-                        store.setContextSetup({
-                          // Ngoài khoảng của dịp thì kẹp lại, store cũng kẹp thêm một lần
-                          mucTrangTrong: Math.min(mucCao, Math.max(mucThap, Number(e.target.value))) as MucTrangTrong,
-                        })
-                      }
-                      className="w-full accent-[#A8322A] cursor-pointer"
-                    />
-                    <div className="flex justify-between text-[10px] font-mono text-[#6E5439] pt-2">
-                      {trangTrongLabels.map((label, idx) => (
-                        <span
-                          key={idx}
-                          className={
-                            contextSetup.mucTrangTrong === idx + 1
-                              ? 'text-[#A8322A] font-bold'
-                              : idx + 1 < mucThap || idx + 1 > mucCao
-                              ? 'opacity-35 line-through'
-                              : ''
-                          }
-                        >
-                          {label}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <p className="text-[11px] font-sans text-[#6E5439] italic pt-3 mt-2 border-t border-[#2C2A26]/10">
-                  Dịp này từ {layTenMucTrangTrong(mucThap)} tới {layTenMucTrangTrong(mucCao)}. Mặc định theo dịp và vai, kéo trong khoảng đó để chỉnh.
-                </p>
-              </div>
-
+            <div className="p-5 md:p-6 border-t border-[#2C2A26]/12 grid grid-cols-1 md:grid-cols-2 gap-5 bg-[#FBF8F2]">
               {/* 4. THỜI TIẾT & NHIỆT ĐỘ */}
               <div className="border border-[#2C2A26]/12 bg-[#F2EDE3]/50 p-4 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between pb-2 hairline-b">
-                    <span className="micro-label text-[#2C2A26]">4. THỜI TIẾT DỰ BÁO</span>
+                    <span className="micro-label text-[#2C2A26]">4. THỜI TIẾT HÔM ĐÓ</span>
                     <span className="font-mono text-xs text-[#6E5439]">
                       {contextSetup.nhietDo}°C · {contextSetup.thoiTietMua ? 'Mưa' : 'Khô ráo'}
                     </span>
@@ -361,68 +343,31 @@ export default function Step1BoiCanh() {
                 </div>
 
                 <p className="text-[11px] font-sans text-[#6E5439] italic pt-2 mt-2 border-t border-[#2C2A26]/10">
-                  Nhiệt độ trên 32°C kích hoạt cảnh báo nóng.
+                  Bạn tự nhập, app không lấy dự báo. Trên 32°C bật cảnh báo nóng; nhiệt độ và mưa đổi độ dày vải, ánh sáng trong ảnh thử.
                 </p>
               </div>
 
-              {/* 5. VAI TRÒ */}
+              {/* 5. PHONG CÁCH: vai quyết định phong cách nào được mở */}
               <div className="border border-[#2C2A26]/12 bg-[#F2EDE3]/50 p-4 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between pb-2 hairline-b">
-                    <span className="micro-label text-[#2C2A26]">5. VAI TRÒ XUẤT HIỆN</span>
-                    <span className="micro-label text-[#6E5439]">
-                      {vaiTroOptions.length > 1 ? `${vaiTroOptions.length} VAI CHO DỊP NÀY` : 'DỊP NÀY CÓ 1 VAI'}
-                    </span>
-                  </div>
-
-                  <div className={`grid gap-2 pt-3 ${vaiTroOptions.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                    {vaiTroOptions.map((opt) => {
-                      const isSelected = contextSetup.vaiTro === opt.id;
-                      return (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => store.setContextSetup({ vaiTro: opt.id })}
-                          className={`p-2 border text-left cursor-pointer transition-colors ${
-                            isSelected
-                              ? 'border-[#A8322A] bg-[#F2EDE3]'
-                              : 'border-[#2C2A26]/12 bg-[#FBF8F2] hover:border-[#2C2A26]/30'
-                          }`}
-                        >
-                          <span className="font-display text-xs text-[#2C2A26] block leading-tight">
-                            {opt.label}
-                          </span>
-                          <span className="text-[9px] font-sans text-[#6E5439] block mt-0.5 truncate">
-                            {opt.desc}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              {/* 6. PHONG CÁCH CÁ NHÂN */}
-              <div className="border border-[#2C2A26]/12 bg-[#F2EDE3]/50 p-4 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between pb-2 hairline-b">
-                    <span className="micro-label text-[#2C2A26]">6. PHONG CÁCH</span>
+                    <span className="micro-label text-[#2C2A26]">5. PHONG CÁCH</span>
                     <span className="micro-label text-[#A8322A]">NỚI LUẬT</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 pt-3">
                     {phongCachOptions.map((opt) => {
                       const isSelected = contextSetup.phongCach === opt.id;
-                      // Phong cách không hợp dịp thì khoá và nói lý do, không giấu đi
-                      const biKhoa = !luatDip.phongCach.includes(opt.id);
+                      // Phong cách không hợp vai thì khoá và nói lý do, không giấu đi
+                      const lyDoKhoa = lyDoKhoaPhongCach(vaiDangChon, opt.id);
                       return (
                         <button
                           key={opt.id}
                           type="button"
-                          disabled={biKhoa}
+                          disabled={Boolean(lyDoKhoa)}
                           onClick={() => store.setContextSetup({ phongCach: opt.id })}
                           className={`p-2 border text-left transition-colors ${
-                            biKhoa
+                            lyDoKhoa
                               ? 'border-[#2C2A26]/8 bg-[#FBF8F2] opacity-45 cursor-not-allowed'
                               : isSelected
                               ? 'border-[#A8322A] bg-[#F2EDE3] cursor-pointer'
@@ -432,40 +377,8 @@ export default function Step1BoiCanh() {
                           <span className="font-display text-xs text-[#2C2A26] block leading-tight">
                             {opt.label}
                           </span>
-                          <span className="text-[9px] font-sans text-[#6E5439] block mt-0.5 truncate">
-                            {biKhoa ? luatDip.lyDoKhoaPhongCach : opt.desc}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              {/* 7. NGÂN SÁCH DỰ KIẾN */}
-              <div className="border border-[#2C2A26]/12 bg-[#F2EDE3]/50 p-4 flex flex-col justify-between md:col-span-2 lg:col-span-1">
-                <div>
-                  <div className="flex items-center justify-between pb-2 hairline-b">
-                    <span className="micro-label text-[#2C2A26]">7. HÌNH THỨC SỞ HỮU</span>
-                    <span className="micro-label text-[#6E5439]">NGÂN SÁCH</span>
-                  </div>
-
-                  <div className="flex flex-col gap-2 pt-3">
-                    {nganSachOptions.map((opt) => {
-                      const isSelected = contextSetup.nganSach === opt.id;
-                      return (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => store.setContextSetup({ nganSach: opt.id })}
-                          className={`p-2 border text-left cursor-pointer transition-colors ${
-                            isSelected
-                              ? 'border-[#A8322A] bg-[#F2EDE3]'
-                              : 'border-[#2C2A26]/12 bg-[#FBF8F2] hover:border-[#2C2A26]/30'
-                          }`}
-                        >
-                          <span className="font-display text-xs text-[#2C2A26] block">
-                            {opt.label}
+                          <span className="text-[9px] font-sans text-[#6E5439] block mt-0.5 leading-snug">
+                            {lyDoKhoa || opt.desc}
                           </span>
                         </button>
                       );
@@ -474,7 +387,7 @@ export default function Step1BoiCanh() {
                 </div>
 
                 <p className="text-[11px] font-sans text-[#6E5439] italic pt-2 mt-2 border-t border-[#2C2A26]/10">
-                  Dùng để định hướng gợi ý tiệm may và mức chi phí.
+                  Mặc định là Nguyên bản. Luật mức đỏ không bao giờ được nới, ở phong cách nào cũng vậy.
                 </p>
               </div>
             </div>
@@ -485,7 +398,7 @@ export default function Step1BoiCanh() {
       {/* THANH ĐIỀU HƯỚNG SANG BƯỚC 2: Bật ngay khi chọn Sự kiện & Vùng miền */}
       <div className="flex items-center justify-between pt-4 border-t border-[#2C2A26]/15">
         <div className="text-xs font-mono text-[#6E5439]">
-          BỐI CẢNH: <span className="text-[#2C2A26] font-bold">{selectedEvent.ten}</span> · VÙNG: <span className="text-[#2C2A26] font-bold">{selectedRegion.ten}</span>
+          BỐI CẢNH: <span className="text-[#2C2A26] font-bold">{selectedEvent.ten}</span> · VAI: <span className="text-[#2C2A26] font-bold">{vaiDangChon.label}</span> · VÙNG: <span className="text-[#2C2A26] font-bold">{selectedRegion.ten}</span>
         </div>
 
         <button

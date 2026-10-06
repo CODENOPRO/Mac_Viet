@@ -101,6 +101,8 @@ export interface EventContext {
   mauNenTranh: string[];
   mauNenDung: string[];
   luuY: string;
+  /** Có ở bối cảnh hiệu lực (data/boiCanhSuKien.ts): vai của người dùng trong dịp này */
+  vaiTro?: VaiTro;
 }
 
 export interface Region {
@@ -204,7 +206,6 @@ export type VaiTro =
   | 'dan_chuong_trinh'
   | 'khan_gia';
 export type PhongCach = 'nguyen_ban' | 'toi_gian' | 'remix_pho' | 'san_khau';
-export type NganSach = 'thue' | 'may_do' | 'mua_san';
 export type NguoiMacGioiTinh = 'nam' | 'nu' | 'khong_neu';
 
 export interface UserContextSetup {
@@ -215,7 +216,6 @@ export interface UserContextSetup {
   thoiTietMua: boolean;
   vaiTro: VaiTro;
   phongCach: PhongCach;
-  nganSach: NganSach;
   nguoiMac: NguoiMacGioiTinh;
 }
 
@@ -225,6 +225,8 @@ export interface LookCardData {
   ngayTao: string;
   look: LookState;
   eventContextId?: string;
+  /** Vai trong dịp lúc lưu, để mở lại thì luật văn hoá chấm đúng như lúc lưu */
+  vaiTro?: VaiTro;
   ghiChu?: string;
   /** Có ảnh mặc thử lưu kèm trong IndexedDB (xem lib/anhLookbook.ts) */
   coAnh?: boolean;
