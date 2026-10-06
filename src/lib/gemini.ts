@@ -1,11 +1,7 @@
 import { Type, Schema } from '@google/genai';
 import { GARMENTS } from '../data/garments';
 import { SOURCES } from '../data/sources';
-import { MOTIFS } from '../data/motifs';
-import { REGIONS } from '../data/regions';
 import { TRADITIONAL_COLORS } from '../data/palettes';
-import { FALLBACK_OUTFITS_BY_EVENT, FallbackOutfit } from '../data/fallbackLooks';
-import { DEMO_RESPONSES } from '../data/demoResponses';
 import { boMaNoiBoSau } from './boMaNoiBo';
 import { taoAi, aiSanSang, coKhoaTrucTiep } from './aiClient';
 import { LookState, EventContext, CultureFlag } from '../types';
@@ -159,14 +155,11 @@ async function goiModelGoc<T>(params: {
 
   geminiStats.soLanGoi++;
 
-  // 1. Chế độ Demo: chỉ dùng kết quả soạn sẵn cho gợi ý phối đồ, vốn không phụ thuộc món đang xem.
-  //    Các hàm còn lại (giải thích áo, kiểm tra văn hoá, đặt tên look) phải bám đúng món đang xem,
-  //    nên dùng đường dự phòng đọc từ dữ liệu thay vì một kết quả cố định cho mọi đầu vào.
+  // 1. Chế độ Demo: mọi hàm bám đúng món đang xem, nên dùng đường dự phòng đọc từ dữ liệu
+  //    thay vì một kết quả soạn sẵn cố định cho mọi đầu vào.
   if (isDemoMode()) {
     geminiStats.soLanTrungCache++;
     geminiStats.lanCuoiTrangThai = 'cached';
-    const demoData = (DEMO_RESPONSES as any)[tenHam];
-    if (demoData && tenHam === 'suggestOutfits') return demoData as T;
     return duPhong();
   }
 
@@ -253,122 +246,7 @@ async function goiModelGoc<T>(params: {
 }
 
 // =============================================================================
-// [1] SUGGEST OUTFITS: GỢI Ý BA PHƯƠNG ÁN PHỐI ĐỒ
-// =============================================================================
-export interface SuggestedOutfit {
-  ten: string;
-  lyDo: string;
-  thuongY: string;
-  haY: string;
-  thuPhuc: string;
-  hai: string;
-  phuKien: string[];
-  mauChinh: string;
-  mauPhu: string;
-  mucPhuHop: number;
-  sourceIds: string[];
-}
-
-export interface SuggestOutfitsResponse {
-  phuongAn: SuggestedOutfit[];
-}
-
-export async function suggestOutfits(
-  boiCanh: EventContext,
-  soThich?: { phongCach?: string; vaiTro?: string; mauUaThich?: string }
-): Promise<SuggestOutfitsResponse> {
-  // Lọc sẵn chỉ các hiện vật hợp vùng và hợp mức trang trọng
-  const garmentsHopLe = GARMENTS.filter(
-    (g) => Math.abs(g.mucTrangTrong - boiCanh.mucTrangTrongYeuCau) <= 2
-  );
-
-  const contextData = garmentsHopLe.map((g) => ({
-    id: g.id,
-    ten: g.ten,
-    lop: g.lop,
-    vung: g.vung,
-    mucTrangTrong: g.mucTrangTrong,
-    mauTruyenThong: g.mauTruyenThong,
-    sourceIds: g.sourceIds,
-  }));
-
-  const schema: Schema = {
-    type: Type.OBJECT,
-    properties: {
-      phuongAn: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            ten: { type: Type.STRING },
-            lyDo: { type: Type.STRING },
-            thuongY: { type: Type.STRING },
-            haY: { type: Type.STRING },
-            thuPhuc: { type: Type.STRING },
-            hai: { type: Type.STRING },
-            phuKien: { type: Type.ARRAY, items: { type: Type.STRING } },
-            mauChinh: { type: Type.STRING },
-            mauPhu: { type: Type.STRING },
-            mucPhuHop: { type: Type.INTEGER },
-            sourceIds: { type: Type.ARRAY, items: { type: Type.STRING } },
-          },
-          required: [
-            'ten',
-            'lyDo',
-            'thuongY',
-            'haY',
-            'thuPhuc',
-            'hai',
-            'mauChinh',
-            'mucPhuHop',
-            'sourceIds',
-          ],
-        },
-      },
-    },
-    required: ['phuongAn'],
-  };
-
-  const prompt =
-    `=== KHỐI 1: VAI TRÒ ===\n` +
-    `Bạn là giám tuyển trang phục truyền thống Việt Nam cho sự kiện: "${boiCanh.ten}". Yêu cầu trang trọng: ${boiCanh.mucTrangTrongYeuCau}/5. Lưu ý sự kiện: ${boiCanh.luuY}.\n\n` +
-    `=== KHỐI 2: DỮ LIỆU ĐÃ KIỂM DUYỆT (CHỈ ĐƯỢC DÙNG CÁC ID DƯỚI ĐÂY) ===\n` +
-    `${JSON.stringify(contextData)}\n\n` +
-    `=== KHỐI 3: NHIỆM VỤ ===\n` +
-    `Gợi ý ĐÚNG 3 phương án phối đồ hoàn chỉnh, thanh nhã, tôn dáng và hợp bối cảnh. Sở thích: ${JSON.stringify(soThich || {})}.\n\n` +
-    `=== KHỐI 4: RÀNG BUỘC NGHIÊM NGẶT ===\n` +
-    `- CHỈ ĐƯỢC CHỌN ID HIỆN VẬT CÓ TRONG DANH SÁCH ĐƯA VÀO. CẤM BỊA MÓN HOẶC TỰ SINH ID LẠ.\n` +
-    `- Mỗi phương án phải kèm sourceIds lấy từ các hiện vật cấu thành.\n\n` +
-    `=== KHỐI 5: SCHEMA ===\n` +
-    `Trả về đúng định dạng JSON theo schema đã chỉ định.`;
-
-  const fallbackResult = (): SuggestOutfitsResponse => {
-    const list = FALLBACK_OUTFITS_BY_EVENT[boiCanh.id] || FALLBACK_OUTFITS_BY_EVENT['E01'];
-    return { phuongAn: list };
-  };
-
-  const res = await goiModel<SuggestOutfitsResponse>({
-    tenHam: 'suggestOutfits',
-    dauVao: { boiCanhId: boiCanh.id, soThich },
-    systemInstruction: SYSTEM_INSTRUCTION_SHARED,
-    prompt,
-    temperature: 0.7,
-    responseSchema: schema,
-    duPhong: fallbackResult,
-  });
-
-  // Hậu kiểm định sourceIds
-  if (res?.phuongAn) {
-    res.phuongAn.forEach((pa) => {
-      pa.sourceIds = locSourceIdsHopLe(pa.sourceIds);
-    });
-  }
-
-  return res;
-}
-
-// =============================================================================
-// [2] EXPLAIN GARMENT: CÂU CHUYỆN CỦA MỘT HIỆN VẬT
+// [1] EXPLAIN GARMENT: CÂU CHUYỆN CỦA MỘT HIỆN VẬT
 // =============================================================================
 export interface ExplainGarmentResponse {
   cauChuyen: string;
@@ -439,7 +317,7 @@ export async function explainGarment(
 }
 
 // =============================================================================
-// [3] CULTURE CHECK: DIỄN GIẢI CỜ VĂN HOÁ
+// [2] CULTURE CHECK: DIỄN GIẢI CỜ VĂN HOÁ
 // =============================================================================
 export interface CultureCheckDienGiai {
   ruleId: string;
@@ -542,238 +420,7 @@ export async function cultureCheck(
 }
 
 // =============================================================================
-// [4] RENDER LOOK: ẢNH MOCKUP
-// =============================================================================
-export async function resizeImageToMax1024(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    if (typeof window === 'undefined') {
-      return resolve('');
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const MAX = 1024;
-        let w = img.width;
-        let h = img.height;
-        if (w > MAX || h > MAX) {
-          if (w > h) {
-            h = Math.round((h * MAX) / w);
-            w = MAX;
-          } else {
-            w = Math.round((w * MAX) / h);
-            h = MAX;
-          }
-        }
-        // VẼ LÊN CANVAS ĐỂ THU NHỎ VÀ XOÁ TOÀN BỘ METADATA EXIF (BAO GỒM TOẠ ĐỘ GPS)
-        // Việc tạo một canvas mới và vẽ lại pixel thuần tuý sẽ loại bỏ hoàn toàn
-        // các thẻ EXIF nhạy cảm (GPS, thiết bị, thời gian chụp) trước khi gửi tới API.
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return resolve(img.src);
-        ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', 0.85));
-      };
-      img.onerror = reject;
-      img.src = e.target?.result as string;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-export const nenAnhChoAI = resizeImageToMax1024;
-
-/**
- * Ghi trực tiếp dải mờ và dòng chữ "ẢNH DO AI TẠO" vào canvas của ảnh
- * để khi người dùng tải về file ảnh, nhãn này vẫn luôn hiện diện.
- */
-export async function dongDauAnhAI(dataUrl: string): Promise<string> {
-  return new Promise((resolve) => {
-    if (typeof window === 'undefined') return resolve(dataUrl);
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return resolve(dataUrl);
-
-      // Vẽ ảnh gốc
-      ctx.drawImage(img, 0, 0);
-
-      // Tính kích thước dải nhãn dựa trên tỉ lệ ảnh
-      const fontSize = Math.max(12, Math.round(canvas.width * 0.024));
-      const padX = Math.round(fontSize * 0.8);
-      const padY = Math.round(fontSize * 0.4);
-      const text = 'ẢNH DO AI TẠO';
-
-      ctx.font = `${fontSize}px "JetBrains Mono", monospace`;
-      const textWidth = ctx.measureText(text).width;
-
-      const badgeW = textWidth + padX * 2;
-      const badgeH = fontSize + padY * 2;
-      const posX = Math.round(canvas.width * 0.04);
-      const posY = canvas.height - badgeH - Math.round(canvas.height * 0.04);
-
-      // Dải mờ nền tối
-      ctx.fillStyle = 'rgba(13, 24, 38, 0.88)';
-      ctx.fillRect(posX, posY, badgeW, badgeH);
-
-      // Viền mảnh kim loại #C39A27
-      ctx.strokeStyle = '#C39A27';
-      ctx.lineWidth = Math.max(1, Math.round(fontSize * 0.08));
-      ctx.strokeRect(posX, posY, badgeW, badgeH);
-
-      // Chữ màu ngà #F2EDE3
-      ctx.fillStyle = '#F2EDE3';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(text, posX + padX, posY + badgeH / 2);
-
-      resolve(canvas.toDataURL('image/jpeg', 0.92));
-    };
-    img.onerror = () => resolve(dataUrl);
-    img.src = dataUrl;
-  });
-}
-
-import { macThu, tryOnStats, TryOnStats } from './tryOn';
-import { chonBoiCanhTuDong } from '../data/backgrounds';
-import { EVENTS } from '../data/events';
-
-export { macThu, tryOnStats };
-export type { TryOnStats };
-
-export async function renderLook(
-  look: LookState,
-  anhNguoiDung?: string,
-  moTaAvatar?: string
-): Promise<{ imageUrl: string }> {
-  const boiCanh = EVENTS[0];
-  const bg = chonBoiCanhTuDong(boiCanh.id);
-
-  const res = await macThu({
-    anhNguoi: anhNguoiDung || '',
-    look,
-    boiCanh,
-    background: bg,
-    chatLuong: 'nhanh',
-  });
-
-  return { imageUrl: res.anh };
-}
-
-// =============================================================================
-// [5] ASK CỤ NGHỆ: HỎI ĐÁP STREAM KÈM RAG CỤC BỘ TỐI ĐA 5 HIỆN VẬT
-// =============================================================================
-export async function askCuNghe(
-  cauHoi: string,
-  lichSuChat: { role: 'user' | 'model'; text: string }[] = [],
-  onChunk?: (chunkText: string) => void
-): Promise<string> {
-  geminiStats.soLanGoi++;
-
-  if (isDemoMode()) {
-    geminiStats.soLanTrungCache++;
-    geminiStats.lanCuoiTrangThai = 'cached';
-    const demoText = DEMO_RESPONSES.askCuNghe.traLoi;
-    if (onChunk) onChunk(demoText);
-    return demoText;
-  }
-
-  // RAG CỤC BỘ ĐƠN GIẢN:
-  // Tìm trong garments, motifs, regions những mục có từ khoá trùng với câu hỏi (tối đa 5 mục)
-  const keywords = cauHoi
-    .toLowerCase()
-    .replace(/[?,.:;!]/g, '')
-    .split(/\s+/)
-    .filter((w) => w.length > 2);
-
-  const matchedItems: any[] = [];
-
-  for (const g of GARMENTS) {
-    const text = `${g.ten} ${g.tenKhac.join(' ')} ${g.moTaNgan} ${g.dungKhiNao.join(' ')}`.toLowerCase();
-    if (keywords.some((k) => text.includes(k))) {
-      matchedItems.push({ loai: 'Trang phục', id: g.id, ten: g.ten, moTa: g.moTaNgan, nienDai: g.nienDai });
-      if (matchedItems.length >= 5) break;
-    }
-  }
-
-  if (matchedItems.length < 5) {
-    for (const m of MOTIFS) {
-      const text = `${m.ten} ${m.yNghia}`.toLowerCase();
-      if (keywords.some((k) => text.includes(k))) {
-        matchedItems.push({ loai: 'Hoa văn', id: m.id, ten: m.ten, yNghia: m.yNghia });
-        if (matchedItems.length >= 5) break;
-      }
-    }
-  }
-
-  if (matchedItems.length < 5) {
-    for (const r of REGIONS) {
-      const text = `${r.ten} ${r.dacTrung} ${r.ghiChuTonTrong}`.toLowerCase();
-      if (keywords.some((k) => text.includes(k))) {
-        matchedItems.push({ loai: 'Vùng miền', id: r.id, ten: r.ten, dacTrung: r.dacTrung });
-        if (matchedItems.length >= 5) break;
-      }
-    }
-  }
-
-  const promptRag =
-    `=== DỮ LIỆU ĐÃ KIỂM DUYỆT (TỐI ĐA 5 MỤC TỪ KHO TRUYỀN THỐNG) ===\n` +
-    `${JSON.stringify(matchedItems.slice(0, 5))}\n\n` +
-    `=== LỊCH SỬ HỘI THOẠI TRƯỚC ĐÓ ===\n` +
-    `${lichSuChat.map((m) => `${m.role === 'user' ? 'Khách hỏi' : 'Cụ Nghệ đáp'}: ${m.text}`).join('\n')}\n\n` +
-    `=== CÂU HỎI HIỆN TẠI ===\n` +
-    `"${cauHoi}"\n\n` +
-    `=== NHIỆM VỤ & RÀNG BUỘC PERSONA ===\n` +
-    `- Nhập vai Cụ Nghệ: một nghệ nhân may mặc truyền thống lớn tuổi, hiền hậu, ăn nói từ tốn, hay lấy ví dụ mộc mạc đời thường, không lên lớp.\n` +
-    `- NẾU DỮ LIỆU KHÔNG ĐỦ ĐỂ TRẢ LỜI, PHẢI NÓI THẲNG: "Cái này tôi chưa nắm chắc" rồi gợi ý mở mục Bảo tàng liên quan. TUYỆT ĐỐI CẤM BỊA ĐẶT KIẾN THỨC.`;
-
-  const fallbackText =
-    `Chào bạn trẻ. Câu hỏi này tôi chưa nắm chắc từ tư liệu của app, bạn có thể tra trong mục Luật văn hoá hoặc phần hiện vật ở trang chính nhé.`;
-
-  if (!ai) {
-    geminiStats.soLanDuPhong++;
-    geminiStats.lanCuoiTrangThai = 'fallback';
-    if (onChunk) onChunk(fallbackText);
-    return fallbackText;
-  }
-
-  try {
-    const stream = await ai.models.generateContentStream({
-      model: 'gemini-3.8-flash',
-      contents: promptRag,
-      config: {
-        temperature: 0.5,
-        systemInstruction: SYSTEM_INSTRUCTION_SHARED,
-      },
-    });
-
-    let fullText = '';
-    for await (const chunk of stream) {
-      const part = chunk.text || '';
-      fullText += part;
-      if (onChunk) onChunk(part);
-    }
-
-    geminiStats.lanCuoiTrangThai = 'ready';
-    return fullText;
-  } catch (err) {
-    console.error('[CỤ NGHỆ LỖI STREAM] Dùng dự phòng:', err);
-    geminiStats.soLanLoi++;
-    geminiStats.soLanDuPhong++;
-    geminiStats.lanCuoiTrangThai = 'fallback';
-    if (onChunk) onChunk(fallbackText);
-    return fallbackText;
-  }
-}
-
-// =============================================================================
-// [6] NAME AND CAPTION: TÊN LOOK VÀ CAPTION CHIA SẺ
+// [3] NAME AND CAPTION: TÊN LOOK VÀ CAPTION CHIA SẺ
 // =============================================================================
 export interface NameAndCaptionResult {
   tenLook: string;
@@ -838,7 +485,7 @@ export async function nameAndCaption(
 }
 
 // =============================================================================
-// [7] SO SÁNH LOOK: SO SÁNH CÁC PHƯƠNG ÁN PHỐI
+// [4] SO SÁNH LOOK: SO SÁNH CÁC PHƯƠNG ÁN PHỐI
 // =============================================================================
 export interface LookComparisonInput {
   id: string;

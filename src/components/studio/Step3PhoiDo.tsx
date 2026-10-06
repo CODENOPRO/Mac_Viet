@@ -7,7 +7,7 @@ import { chonBoiCanhTuDong } from '../../data/backgrounds';
 import { GarmentLayer, Garment, Motif, Background } from '../../types';
 import { tinhHaiHoa, ColorInputItem } from '../../lib/colorHarmony';
 import { kiemTraVanHoa } from '../../lib/cultureGuard';
-import { macThu, KiemTraAnh } from '../../lib/tryOn';
+import { macThu, KiemTraAnh, xoaToanBoCacheTryOn } from '../../lib/tryOn';
 import { dungBoiCanhAnh } from '../../lib/promptDong';
 import CultureFlagPanel from './CultureFlagPanel';
 import AiExplanationModal from './AiExplanationModal';
@@ -518,6 +518,18 @@ export default function Step3PhoiDo() {
                 </div>
               </details>
             </div>
+
+            {/* XOÁ ẢNH LƯU TẠM: giữ đúng lời hứa ở hộp xin phép quyền riêng tư */}
+            <button
+              type="button"
+              onClick={async () => {
+                await xoaToanBoCacheTryOn();
+                setStatusMessage('Đã xoá các ảnh kết quả lưu tạm trong trình duyệt của bạn.');
+              }}
+              className="self-start font-sans text-[11px] text-[#6E5439] underline hover:text-[#A8322A] cursor-pointer"
+            >
+              Xoá ảnh lưu tạm
+            </button>
 
             {/* 3. DẢI ẢNH NHỎ CÁC LẦN MẶC THỬ TRƯỚC */}
             {tryOnHistory.length > 0 && (

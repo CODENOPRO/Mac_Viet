@@ -172,7 +172,7 @@ export default function Step1BoiCanh() {
                       {/* Nói thẳng khi vùng chưa có hiện vật trong bộ sưu tập, thay vì để người dùng tưởng là có */}
                       {!GARMENTS.some((g) => g.vung.includes(MA_VUNG[r.id] ?? (r.id as RegionId))) && (
                         <span className="text-[11px] font-sans text-[#A8322A] block mt-1">
-                          Chưa có hồ sơ hiện vật riêng; Culture Guard chỉ áp dụng luật tôn trọng chỉnh thể trang phục.
+                          Kho chưa có hiện vật của các tộc người Tây Bắc, nên app chỉ phối trang phục người Kinh trong cảnh vùng núi; luật về trang phục dân tộc thiểu số đang chờ dữ liệu.
                         </span>
                       )}
                     </div>

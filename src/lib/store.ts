@@ -6,8 +6,6 @@ import {
   LookCardData,
   Garment,
   Motif,
-  HarmonyResult,
-  CultureFlag,
   Region,
   UserContextSetup,
   StudioStep,
@@ -19,7 +17,6 @@ import { luuAnhLook, docAnhLook, xoaAnhLook } from './anhLookbook';
 import { GARMENTS } from '../data/garments';
 import { REGIONS } from '../data/regions';
 import { CULTURE_RULES, LUAT_CHO_DU_LIEU } from '../data/cultureRules';
-import { HISTORICAL_PALETTES } from '../data/palettes';
 import { BO_TRANG_PHUC } from '../data/boTrangPhuc';
 import { kiemTraVanHoa } from './cultureGuard';
 import { maHoaLook, giaiMaLook, TIEN_TO_LINK } from './lienKetChiaSe';
@@ -684,97 +681,6 @@ export const store = {
     emitChange();
   },
 
-  evaluateHarmony(): HarmonyResult {
-    const { lookState, selectedEvent, selectedRegion } = state;
-    const canhBao: CultureFlag[] = [];
-
-    // Kiểm tra tất cả 20 luật văn hóa
-    for (const rule of CULTURE_RULES) {
-      if (rule.kiemTra(lookState, selectedEvent, selectedRegion.id)) {
-        let tenBangMauKhop: string | undefined;
-        if (rule.id === 'CR-20') {
-          // Tìm bảng màu khớp
-          const currentColors = new Set<string>();
-          if (lookState.mauChinh) currentColors.add(lookState.mauChinh.toUpperCase());
-          if (lookState.thuongY?.mauTruyenThong) {
-            lookState.thuongY.mauTruyenThong.forEach((c) => currentColors.add(c.toUpperCase()));
-          }
-          if (lookState.haY?.mauTruyenThong) {
-            lookState.haY.mauTruyenThong.forEach((c) => currentColors.add(c.toUpperCase()));
-          }
-          for (const pal of HISTORICAL_PALETTES) {
-            let matchCount = 0;
-            for (const c of pal.mauSac) {
-              if (currentColors.has(c.toUpperCase())) matchCount++;
-            }
-            if (matchCount >= 3) {
-              tenBangMauKhop = pal.ten;
-              break;
-            }
-          }
-        }
-
-        const cachSuaStr = Array.isArray(rule.cachSua) ? rule.cachSua[0]?.moTa || '' : (rule.cachSua as any) || '';
-        canhBao.push({
-          ruleId: rule.id,
-          mucDo: rule.mucDo,
-          mucDoChung: rule.mucDo,
-          tieuDe: rule.mucDo === 'do' ? 'Cần cân nhắc' : rule.mucDo === 'xanh' ? 'Phối hợp lệ' : 'Hơi lệch bối cảnh',
-          thongDiep: rule.id === 'CR-20' && tenBangMauKhop 
-            ? `Bảng màu đang trùng với bảng màu lịch sử ${tenBangMauKhop}. Đây là một phối màu có gốc.`
-            : rule.thongDiep,
-          cachSua: cachSuaStr,
-          sourceIds: rule.sourceIds || [],
-          tenBangMauKhop,
-          luatViPham: [{ rule, mucDoHienThi: rule.mucDo, isDowngraded: false }],
-          tongSoLuatBan: 1,
-        });
-      }
-    }
-
-    // Đánh giá mức độ trang trọng
-    const topLevel = lookState.thuongY?.mucTrangTrong ?? 1;
-    const mucDoTrangTrongPhuHop = Math.abs(topLevel - selectedEvent.mucTrangTrongYeuCau) <= 1;
-
-    // Đánh giá thống nhất vùng miền
-    const regions = new Set<string>();
-    if (lookState.thuongY) lookState.thuongY.vung.forEach((v) => regions.add(v));
-    if (lookState.haY) lookState.haY.vung.forEach((v) => regions.add(v));
-    if (lookState.thuPhuc) lookState.thuPhuc.vung.forEach((v) => regions.add(v));
-    regions.delete('toan_quoc');
-    const vungMienThongNhat = regions.size <= 1;
-
-    // Tính điểm hài hòa (0 - 100)
-    let diem = 100;
-    for (const flag of canhBao) {
-      if (flag.mucDo === 'do') diem -= 25;
-      else if (flag.mucDo === 'vang') diem -= 10;
-      else if (flag.mucDo === 'xanh') diem += 5; // cộng điểm thưởng bảng màu lịch sử
-    }
-    if (!mucDoTrangTrongPhuHop) diem -= 15;
-    if (!vungMienThongNhat) diem -= 15;
-    if (diem < 0) diem = 0;
-    if (diem > 100) diem = 100;
-
-    const goiY: string[] = [];
-    if (canhBao.filter((c) => c.mucDo !== 'xanh').length === 0 && mucDoTrangTrongPhuHop && vungMienThongNhat) {
-      goiY.push('Bộ trang phục đạt chuẩn mực văn hóa, trang nghiêm và hòa hợp với bối cảnh.');
-    } else {
-      for (const flag of canhBao) {
-        if (flag.mucDo !== 'xanh') {
-          goiY.push(flag.cachSua);
-        }
-      }
-    }
-
-    return {
-      mucDoTrangTrongPhuHop,
-      vungMienThongNhat,
-      diemHaiHoa: diem,
-      canhBao,
-      goiY,
-    };
-  },
 };
 
 export function useStore(): AppStoreState {

@@ -433,7 +433,7 @@ export default function Step2ChonAnh() {
               <li className="flex items-start gap-2.5">
                 <span className="w-1.5 h-1.5 bg-[#A8322A] mt-1.5 shrink-0" />
                 <span>
-                  Chúng tôi không giữ ảnh gốc và ảnh kết quả, trừ khi bạn tự bấm lưu vào Lookbook trên máy mình.
+                  Chúng tôi không giữ ảnh gốc của bạn. Trình duyệt của bạn tạm giữ tối đa 20 ảnh kết quả gần nhất để không phải dựng lại, và bạn xoá được bằng nút Xoá ảnh lưu tạm ở màn phối đồ. Ảnh chỉ được lưu lâu hơn khi bạn tự bấm lưu vào Lookbook.
                 </span>
               </li>
               <li className="flex items-start gap-2.5">

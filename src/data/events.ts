@@ -17,7 +17,7 @@ export const EVENTS: EventContext[] = [
     mucTrangTrongYeuCau: 3,
     mauNenDung: ['tự do trong bảng truyền thống'],
     mauNenTranh: ['màu quá rực làm nhoà cả nhóm'],
-    luuY: 'Cả lớp nên thống nhất một bảng màu chung, app có chế độ xuất bảng màu nhóm.'
+    luuY: 'Cả lớp nên thống nhất một bảng màu chung để ảnh tập thể không rối mắt.'
   },
   {
     id: 'E03',

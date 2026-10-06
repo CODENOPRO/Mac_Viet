@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { LookState } from '../../types';
-import { nenAnhChoAI } from '../../lib/gemini';
 import { macThu } from '../../lib/tryOn';
 import { getDailyQuota, KY_QUOTA_LIMIT } from '../../lib/tryOnGuard';
 import { chonBoiCanhTuDong } from '../../data/backgrounds';
@@ -272,7 +271,7 @@ export default function TryOnModal({
                   </li>
                   <li className="flex items-start gap-2.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#A8322A] mt-1.5 shrink-0" />
-                    <span>Chúng tôi không lưu ảnh gốc, không lưu ảnh kết quả, trừ khi bạn tự bấm lưu vào Lookbook trên máy bạn.</span>
+                    <span>Chúng tôi không giữ ảnh gốc của bạn. Trình duyệt của bạn tạm giữ tối đa 20 ảnh kết quả gần nhất để không phải dựng lại, và bạn xoá được bằng nút Xoá ảnh lưu tạm ở màn phối đồ. Ảnh chỉ được lưu lâu hơn khi bạn tự bấm lưu vào Lookbook.</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#A8322A] mt-1.5 shrink-0" />

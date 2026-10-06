@@ -9,11 +9,9 @@ import {
   explainGarment,
   cultureCheck,
   nameAndCaption,
-  renderLook,
   ExplainGarmentResponse,
   CultureCheckResponse,
   NameAndCaptionResult,
-  nenAnhChoAI,
 } from '../../lib/gemini';
 import { macThu } from '../../lib/tryOn';
 import { chonBoiCanhTuDong } from '../../data/backgrounds';
