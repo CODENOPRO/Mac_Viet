@@ -374,6 +374,8 @@ export function kiemTraVanHoa(
     thongDiep,
     luatViPham: top3Luat,
     tongSoLuatBan: cacLuatBan.length,
+    soLuatDo: cacLuatBan.filter((l) => l.mucDoHienThi === 'do').length,
+    soLuatVang: cacLuatBan.filter((l) => l.mucDoHienThi === 'vang').length,
     ruleId: top3Luat[0]?.rule.id || '',
     cachSua: top3Luat[0]?.rule.cachSua[0]?.moTa || '',
     sourceIds: top3Luat[0]?.rule.sourceIds || [],

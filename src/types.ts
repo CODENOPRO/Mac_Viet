@@ -138,6 +138,9 @@ export interface CultureFlag {
   tenBangMauKhop?: string;
   luatViPham: ActiveRuleItem[];
   tongSoLuatBan: number;
+  /** Đếm trên toàn bộ luật đang bật, không chỉ 3 luật hiện ra */
+  soLuatDo?: number;
+  soLuatVang?: number;
 }
 
 export interface LookState {

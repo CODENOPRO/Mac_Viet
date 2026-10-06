@@ -4,6 +4,7 @@ import { SOURCES } from '../../data/sources';
 import { TRADITIONAL_COLORS, layTenMau } from '../../data/palettes';
 import { tinhHaiHoa, ColorInputItem } from '../../lib/colorHarmony';
 import { kiemTraVanHoa } from '../../lib/cultureGuard';
+import { mauThucTeCuaLook, diemHopBoiCanh, diemVanHoa, MO_TA_DIEM_BOI_CANH } from '../../lib/diemSo';
 import {
   explainGarment,
   cultureCheck,
@@ -76,35 +77,8 @@ export default function Step3LookCard() {
   // ---------------------------------------------------------------------------
   // 1. ENGINE TÍNH ĐIỂM CỤC BỘ (TỨC THÌ, KHÔNG CHỜ MẠNG)
   // ---------------------------------------------------------------------------
-  const mauThucTe: ColorInputItem[] = useMemo(() => {
-    return [
-      {
-        hex: lookState.mauChinh || lookState.thuongY?.mauTruyenThong?.[0] || '#16243A',
-        trongSo: 0.5,
-        lop: 'thuong_y',
-      },
-      {
-        hex: lookState.haY?.mauTruyenThong?.[0] || '#F2EDE3',
-        trongSo: 0.25,
-        lop: 'ha_y',
-      },
-      {
-        hex: lookState.thuPhuc?.mauTruyenThong?.[0] || '#2C2A26',
-        trongSo: 0.1,
-        lop: 'thu_phuc',
-      },
-      {
-        hex: lookState.hai?.mauTruyenThong?.[0] || '#16243A',
-        trongSo: 0.05,
-        lop: 'hai',
-      },
-      {
-        hex: '#F2EDE3',
-        trongSo: 0.1,
-        lop: 'phu_kien',
-      },
-    ];
-  }, [lookState]);
+  // Điểm tính ở lib/diemSo.ts, dùng chung với màn phối đồ và màn so sánh
+  const mauThucTe: ColorInputItem[] = useMemo(() => mauThucTeCuaLook(lookState), [lookState]);
 
   const colorResult = useMemo(
     () => tinhHaiHoa(mauThucTe, selectedEvent),
@@ -112,13 +86,10 @@ export default function Step3LookCard() {
   );
   const scoreMau = colorResult.diem;
 
-  const scoreBoiCanh = useMemo(() => {
-    const topLevel = lookState.thuongY?.mucTrangTrong ?? 3;
-    const diff = Math.abs(topLevel - (contextSetup.mucTrangTrong ?? selectedEvent.mucTrangTrongYeuCau));
-    if (diff === 0) return 96;
-    if (diff === 1) return 82;
-    return 55;
-  }, [lookState.thuongY, selectedEvent]);
+  const scoreBoiCanh = useMemo(
+    () => diemHopBoiCanh(lookState, contextSetup.mucTrangTrong ?? selectedEvent.mucTrangTrongYeuCau).diem,
+    [lookState, contextSetup.mucTrangTrong, selectedEvent]
+  );
 
   const cultureFlagResult = useMemo(() => {
     return kiemTraVanHoa(
@@ -130,11 +101,7 @@ export default function Step3LookCard() {
     );
   }, [lookState, selectedEvent, contextSetup]);
 
-  const scoreVanHoa = useMemo(() => {
-    if (cultureFlagResult.mucDoChung === 'xanh') return 98;
-    if (cultureFlagResult.mucDoChung === 'vang') return 74;
-    return 36;
-  }, [cultureFlagResult]);
+  const scoreVanHoa = useMemo(() => diemVanHoa(cultureFlagResult), [cultureFlagResult]);
 
   // ---------------------------------------------------------------------------
   // 2. TÊN 6 LỚP ĐANG MẶC (DƯỚI KHỐI ẢNH)
@@ -624,7 +591,7 @@ export default function Step3LookCard() {
 
               {/* 2. Hợp bối cảnh */}
               <div className="flex flex-col">
-                <span className="micro-label text-[#6E5439]">HỢP BỐI CẢNH</span>
+                <span className="micro-label text-[#6E5439]" title={MO_TA_DIEM_BOI_CANH}>HỢP BỐI CẢNH</span>
                 <div className="text-3xl font-mono text-[#2C2A26] font-light mt-0.5 tabular-nums">
                   {scoreBoiCanh}
                 </div>

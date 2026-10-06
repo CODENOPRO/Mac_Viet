@@ -7,6 +7,7 @@ import { tinhHaiHoa, ColorInputItem } from '../../lib/colorHarmony';
 import { kiemTraVanHoa } from '../../lib/cultureGuard';
 import { soSanhLook, LookComparisonInput, SoSanhLookResponse } from '../../lib/gemini';
 import { LookState, EventContext, CultureFlag, UserContextSetup } from '../../types';
+import { mauThucTeCuaLook, diemHopBoiCanh, diemVanHoa, ketLuanSoSanh } from '../../lib/diemSo';
 
 export interface LookToCompare {
   id: string;
@@ -96,40 +97,11 @@ export default function CompareLooksModal({
       const { lookState } = item;
 
       // Hài hòa màu
-      const mauThucTe: ColorInputItem[] = [
-        {
-          hex: lookState.mauChinh || lookState.thuongY?.mauTruyenThong?.[0] || '#16243A',
-          trongSo: 0.5,
-          lop: 'thuong_y',
-        },
-        {
-          hex: lookState.haY?.mauTruyenThong?.[0] || '#F2EDE3',
-          trongSo: 0.25,
-          lop: 'ha_y',
-        },
-        {
-          hex: lookState.thuPhuc?.mauTruyenThong?.[0] || '#2C2A26',
-          trongSo: 0.1,
-          lop: 'thu_phuc',
-        },
-        {
-          hex: lookState.hai?.mauTruyenThong?.[0] || '#16243A',
-          trongSo: 0.05,
-          lop: 'hai',
-        },
-        {
-          hex: '#F2EDE3',
-          trongSo: 0.1,
-          lop: 'phu_kien',
-        },
-      ];
+      // Điểm tính ở lib/diemSo.ts, cùng công thức với màn phối đồ và Look Card
+      const mauThucTe: ColorInputItem[] = mauThucTeCuaLook(lookState);
       const colorHarmony = tinhHaiHoa(mauThucTe, event);
       const scoreMau = colorHarmony.diem;
-
-      // Hợp bối cảnh
-      const topLevel = lookState.thuongY?.mucTrangTrong ?? 3;
-      const diff = Math.abs(topLevel - event.mucTrangTrongYeuCau);
-      const scoreBoiCanh = diff === 0 ? 96 : diff === 1 ? 82 : 55;
+      const scoreBoiCanh = diemHopBoiCanh(lookState, event.mucTrangTrongYeuCau).diem;
 
       // Cờ văn hóa
       const flagResult = kiemTraVanHoa(
@@ -139,8 +111,7 @@ export default function CompareLooksModal({
         contextSetup.regionId,
         contextSetup.nguoiMac
       );
-      const scoreVanHoa =
-        flagResult.mucDoChung === 'xanh' ? 98 : flagResult.mucDoChung === 'vang' ? 74 : 36;
+      const scoreVanHoa = diemVanHoa(flagResult);
 
       // Mức trang trọng
       const mucTrangTrong = lookState.thuongY?.mucTrangTrong || 3;
@@ -224,17 +195,8 @@ export default function CompareLooksModal({
       .catch((err) => {
         console.warn('[Gemini soSanhLook fallback used]', err);
         if (isMounted) {
-          const sorted = [...evaluatedLooks].sort(
-            (a, b) => b.scoreMau + b.scoreBoiCanh - (a.scoreMau + a.scoreBoiCanh)
-          );
-          const best = sorted[0];
           setConclusionData({
-            lookTotNhat: best.ten,
-            lyDo: `Phương án ${best.ten} đạt chỉ số hài hòa bối cảnh cao nhất (${best.scoreBoiCanh}/100) và điểm màu sắc ${best.scoreMau}/100, đồng thời giữ cờ văn hóa an toàn tuyệt đối cho sự kiện ${event.ten}.`,
-            khiNaoChonCaiKia:
-              evaluatedLooks.length > 1
-                ? `Bạn có thể cân nhắc phương án ${sorted[1].ten} nếu muốn sắc thái trang phục mềm mại hơn cho không gian trò chuyện thân mật.`
-                : 'Phương án này đáp ứng tối ưu bối cảnh sự kiện.',
+            ...ketLuanSoSanh(evaluatedLooks),
           });
         }
       })

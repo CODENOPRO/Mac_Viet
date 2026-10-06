@@ -9,6 +9,7 @@ import { DEMO_RESPONSES } from '../data/demoResponses';
 import { boMaNoiBoSau } from './boMaNoiBo';
 import { taoAi, aiSanSang, coKhoaTrucTiep } from './aiClient';
 import { LookState, EventContext, CultureFlag } from '../types';
+import { ketLuanSoSanh } from './diemSo';
 
 // =============================================================================
 // 1. CẤU HÌNH API KEY VÀ KHỞI TẠO SDK @google/genai
@@ -877,31 +878,8 @@ export async function soSanhLook(
   };
 
   // Dự phòng: chọn look có tổng điểm cao nhất
-  const fallback = (): SoSanhLookResponse => {
-    if (looks.length === 0) {
-      return {
-        lookTotNhat: 'Chưa có phương án',
-        lyDo: 'Chưa có phương án nào để so sánh.',
-        khiNaoChonCaiKia: 'Hãy chọn ít nhất 2 phương án.',
-      };
-    }
-    const sorted = [...looks].sort((a, b) => {
-      const totalA = a.scoreMau + a.scoreBoiCanh + (a.coVanHoaMucDo === 'xanh' ? 100 : a.coVanHoaMucDo === 'vang' ? 70 : 30);
-      const totalB = b.scoreMau + b.scoreBoiCanh + (b.coVanHoaMucDo === 'xanh' ? 100 : b.coVanHoaMucDo === 'vang' ? 70 : 30);
-      return totalB - totalA;
-    });
-    const best = sorted[0];
-    const second = sorted[1] || sorted[0];
-    const tongDiemBest = Math.round((best.scoreMau + best.scoreBoiCanh + best.scoreVanHoa) / 3);
-
-    return {
-      lookTotNhat: best.ten,
-      lyDo: `Phương án ${best.ten} đạt chỉ số hài hòa tổng thể cao nhất với điểm bối cảnh ${best.scoreBoiCanh}/100 và điểm màu ${best.scoreMau}/100, đồng thời giữ cờ văn hóa ở mức an toàn (${best.coVanHoaMucDo.toUpperCase()}) phù hợp mức trang trọng ${boiCanh.mucTrangTrongYeuCau}/5 của sự kiện ${boiCanh.ten}.`,
-      khiNaoChonCaiKia: looks.length > 1
-        ? `Nên chọn ${second.ten} khi bạn muốn ưu tiên phong cách thoải mái hơn hoặc khi tham gia các hoạt động ngoài trời không đòi hỏi tính điển lễ nghiêm ngặt.`
-        : 'Phương án này đã đáp ứng đầy đủ quy thức.',
-    };
-  };
+  // Dự phòng: chỉ nói điều suy ra được từ ba điểm số (xem lib/diemSo.ts)
+  const fallback = (): SoSanhLookResponse => ketLuanSoSanh(looks);
 
   const looksDescription = looks.map((l, idx) => (
     `[PHƯƠNG ÁN ${idx + 1}: ${l.ten}]\n` +

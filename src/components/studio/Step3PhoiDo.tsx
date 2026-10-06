@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore, store } from '../../lib/store';
 import { GARMENTS } from '../../data/garments';
-import { TRADITIONAL_COLORS, HISTORICAL_PALETTES } from '../../data/palettes';
+import { TRADITIONAL_COLORS, HISTORICAL_PALETTES, layTenMau } from '../../data/palettes';
 import { MOTIFS } from '../../data/motifs';
 import { chonBoiCanhTuDong } from '../../data/backgrounds';
 import { GarmentLayer, Garment, Motif, Background } from '../../types';
@@ -12,6 +12,8 @@ import { dungBoiCanhAnh } from '../../lib/promptDong';
 import CultureFlagPanel from './CultureFlagPanel';
 import AiExplanationModal from './AiExplanationModal';
 import { getDailyQuota, exportStampedImage } from '../../lib/tryOnGuard';
+import { mauThucTeCuaLook, diemHopBoiCanh, MO_TA_DIEM_BOI_CANH } from '../../lib/diemSo';
+import { mauHaY, mauThuPhuc } from '../../lib/mauLook';
 
 const TEN_MUC: Record<number, string> = {
   1: 'Thường ngày',
@@ -194,41 +196,13 @@ export default function Step3PhoiDo() {
   // ---------------------------------------------------------------------------
   // 6. TÍNH TOÁN CÁC CHỈ SỐ HÀI HÒA & CỜ VĂN HÓA (CỘT PHẢI 24%)
   // ---------------------------------------------------------------------------
-  const mauThucTe: ColorInputItem[] = [
-    {
-      hex: lookState.mauChinh || lookState.thuongY?.mauTruyenThong?.[0] || '#16243A',
-      trongSo: 0.5,
-      lop: 'thuong_y',
-    },
-    {
-      hex: lookState.haY?.mauTruyenThong?.[0] || '#F2EDE3',
-      trongSo: 0.25,
-      lop: 'ha_y',
-    },
-    {
-      hex: lookState.thuPhuc?.mauTruyenThong?.[0] || '#2C2A26',
-      trongSo: 0.1,
-      lop: 'thu_phuc',
-    },
-    {
-      hex: lookState.hai?.mauTruyenThong?.[0] || '#16243A',
-      trongSo: 0.05,
-      lop: 'hai',
-    },
-    {
-      hex: '#F2EDE3',
-      trongSo: 0.1,
-      lop: 'phu_kien',
-    },
-  ];
-
+  // Điểm tính ở lib/diemSo.ts, dùng chung với Look Card và màn so sánh
+  const mauThucTe: ColorInputItem[] = mauThucTeCuaLook(lookState);
   const colorHarmonyResult = tinhHaiHoa(mauThucTe, selectedEvent);
   const scoreMau = colorHarmonyResult.diem;
 
-  const topLevel = lookState.thuongY?.mucTrangTrong ?? 3;
   const mucYeuCau = contextSetup.mucTrangTrong ?? selectedEvent.mucTrangTrongYeuCau;
-  const diffFormality = Math.abs(topLevel - mucYeuCau);
-  const scoreBoiCanh = diffFormality === 0 ? 96 : diffFormality === 1 ? 82 : 55;
+  const scoreBoiCanh = diemHopBoiCanh(lookState, mucYeuCau).diem;
 
   const cultureFlagResult = kiemTraVanHoa(
     lookState,
@@ -629,7 +603,7 @@ export default function Step3PhoiDo() {
                 Hài hoà màu <b className="font-mono">{scoreMau}</b>
               </span>
               <span className="font-sans text-sm text-[#2C2A26]">
-                Hợp bối cảnh <b className="font-mono">{scoreBoiCanh}</b>
+                <span title={MO_TA_DIEM_BOI_CANH}>Hợp bối cảnh</span> <b className="font-mono">{scoreBoiCanh}</b>
               </span>
               <span className="flex items-center gap-2 font-sans text-sm text-[#2C2A26]">
                 <span
@@ -677,7 +651,7 @@ export default function Step3PhoiDo() {
               { id: 'L3', label: 'Thủ phục', chon: lookState.thuPhuc?.ten },
               { id: 'L4', label: 'Hài', chon: lookState.hai?.ten },
               { id: 'L5', label: 'Hoa văn', chon: lookState.hoaVan?.ten },
-              { id: 'L6', label: 'Màu', chon: TRADITIONAL_COLORS.find((c) => c.hex.toLowerCase() === lookState.mauChinh?.toLowerCase())?.ten },
+              { id: 'L6', label: 'Màu áo', chon: TRADITIONAL_COLORS.find((c) => c.hex.toLowerCase() === lookState.mauChinh?.toLowerCase())?.ten },
             ].map((tab) => {
               const isActive = activeLayer === tab.id;
               return (
@@ -755,6 +729,31 @@ export default function Step3PhoiDo() {
                     );
                   })}
                 </div>
+                {lookState.haY && (
+                  <div className="pt-2 border-t border-[#2C2A26]/12">
+                    <span className="font-mono text-[10px] uppercase text-[#6E5439] block mb-1.5">
+                      MÀU QUẦN · trong màu truyền thống của {lookState.haY.ten.toLowerCase()}
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {lookState.haY.mauTruyenThong.map((hex) => {
+                        const dangChon = (mauHaY(lookState) || '').toUpperCase() === hex.toUpperCase();
+                        return (
+                          <button
+                            key={hex}
+                            type="button"
+                            onClick={() => store.setMauHaY(hex)}
+                            className={`flex items-center gap-1.5 px-2 py-1 border text-xs cursor-pointer ${
+                              dangChon ? 'border-[#A8322A] bg-[#F2EDE3]' : 'border-[#2C2A26]/15 bg-[#FBF8F2] hover:border-[#2C2A26]/40'
+                            }`}
+                          >
+                            <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: hex }} />
+                            <span className="font-display">{layTenMau(hex)}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -792,6 +791,31 @@ export default function Step3PhoiDo() {
                     KHÔNG ĐỘI MŨ / ĐỂ ĐẦU TRẦN
                   </button>
                 </div>
+                {lookState.thuPhuc && (
+                  <div className="pt-2 border-t border-[#2C2A26]/12">
+                    <span className="font-mono text-[10px] uppercase text-[#6E5439] block mb-1.5">
+                      MÀU KHĂN · trong màu truyền thống của {lookState.thuPhuc.ten.toLowerCase()}
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {lookState.thuPhuc.mauTruyenThong.map((hex) => {
+                        const dangChon = (mauThuPhuc(lookState) || '').toUpperCase() === hex.toUpperCase();
+                        return (
+                          <button
+                            key={hex}
+                            type="button"
+                            onClick={() => store.setMauThuPhuc(hex)}
+                            className={`flex items-center gap-1.5 px-2 py-1 border text-xs cursor-pointer ${
+                              dangChon ? 'border-[#A8322A] bg-[#F2EDE3]' : 'border-[#2C2A26]/15 bg-[#FBF8F2] hover:border-[#2C2A26]/40'
+                            }`}
+                          >
+                            <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: hex }} />
+                            <span className="font-display">{layTenMau(hex)}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -881,13 +905,20 @@ export default function Step3PhoiDo() {
                 </div>
 
                 <div className="pt-3 border-t border-[#2C2A26]/12">
-                  <span className="font-mono text-[10px] uppercase text-[#6E5439] block mb-2">BẢNG MÀU DI SẢN</span>
+                  <span className="font-mono text-[10px] uppercase text-[#6E5439] block mb-2">BẢNG MÀU DI SẢN · ÁP CHO CẢ BỘ</span>
                   <div className="flex flex-col gap-2">
                     {HISTORICAL_PALETTES.map((p) => (
                       <button
                         key={p.id}
                         type="button"
-                        onClick={() => store.setMauChinh(p.mauSac[0])}
+                        onClick={() => {
+                          const soLop = store.apBangMau(p.mauSac);
+                          setStatusMessage(
+                            soLop > 1
+                              ? `Đã áp bảng màu ${p.ten} cho ${soLop} lớp. Lớp nào không có màu của bảng trong màu truyền thống của món thì giữ nguyên.`
+                              : `Đã áp màu áo theo bảng ${p.ten}. Quần và khăn đang chọn không có màu nào của bảng trong màu truyền thống của món, nên giữ nguyên.`
+                          );
+                        }}
                         className="p-2 border border-[#2C2A26]/15 text-left bg-[#FBF8F2] hover:border-[#2C2A26]/40 cursor-pointer"
                       >
                         <div className="flex items-center justify-between mb-1">

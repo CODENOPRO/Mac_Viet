@@ -328,14 +328,18 @@ export const store = {
   },
 
   setHaY(garment: Garment | null) {
-    const nextLook = { ...state.lookState, haY: garment };
+    // Màu quần đang chọn không có trong màu truyền thống của món mới thì về màu mặc định của món
+    const giuMau = garment && state.lookState.mauHaY && garment.mauTruyenThong.includes(state.lookState.mauHaY);
+    const nextLook = { ...state.lookState, haY: garment, mauHaY: giuMau ? state.lookState.mauHaY : undefined };
     state = { ...state, lookState: nextLook };
     pushHistory(nextLook);
     emitChange();
   },
 
   setThuPhuc(garment: Garment | null) {
-    const nextLook = { ...state.lookState, thuPhuc: garment };
+    const giuMau =
+      garment && state.lookState.mauThuPhuc && garment.mauTruyenThong.includes(state.lookState.mauThuPhuc);
+    const nextLook = { ...state.lookState, thuPhuc: garment, mauThuPhuc: giuMau ? state.lookState.mauThuPhuc : undefined };
     state = { ...state, lookState: nextLook };
     pushHistory(nextLook);
     emitChange();
@@ -360,6 +364,46 @@ export const store = {
     state = { ...state, lookState: nextLook };
     pushHistory(nextLook);
     emitChange();
+  },
+
+  /** Màu quần, màu khăn: chỉ nhận màu nằm trong màu truyền thống của món đang chọn */
+  setMauHaY(hex: string) {
+    if (!state.lookState.haY?.mauTruyenThong.includes(hex)) return;
+    const nextLook = { ...state.lookState, mauHaY: hex };
+    state = { ...state, lookState: nextLook };
+    pushHistory(nextLook);
+    emitChange();
+  },
+
+  setMauThuPhuc(hex: string) {
+    if (!state.lookState.thuPhuc?.mauTruyenThong.includes(hex)) return;
+    const nextLook = { ...state.lookState, mauThuPhuc: hex };
+    state = { ...state, lookState: nextLook };
+    pushHistory(nextLook);
+    emitChange();
+  },
+
+  /**
+   * Áp một bảng màu di sản cho cả bộ: màu đầu cho áo; quần và khăn nhận màu của bảng nếu màu đó
+   * có trong màu truyền thống của món, không thì giữ nguyên. Trả về số lớp đã đổi màu.
+   */
+  apBangMau(mauSac: string[]): number {
+    const look = state.lookState;
+    const cungMau = (a: string, b: string) => a.toUpperCase() === b.toUpperCase();
+    const timTrongMon = (mon: Garment | null | undefined) =>
+      mon ? mauSac.slice(1).find((m) => mon.mauTruyenThong.some((x) => cungMau(x, m))) : undefined;
+    const mauQuan = timTrongMon(look.haY);
+    const mauKhan = timTrongMon(look.thuPhuc);
+    const nextLook: LookState = {
+      ...look,
+      mauChinh: mauSac[0] || look.mauChinh,
+      mauHaY: mauQuan ? look.haY!.mauTruyenThong.find((x) => cungMau(x, mauQuan)) : look.mauHaY,
+      mauThuPhuc: mauKhan ? look.thuPhuc!.mauTruyenThong.find((x) => cungMau(x, mauKhan)) : look.mauThuPhuc,
+    };
+    state = { ...state, lookState: nextLook };
+    pushHistory(nextLook);
+    emitChange();
+    return 1 + (mauQuan ? 1 : 0) + (mauKhan ? 1 : 0);
   },
 
   setPhuKienHienDai(val: boolean) {

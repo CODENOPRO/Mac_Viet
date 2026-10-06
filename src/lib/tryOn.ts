@@ -7,6 +7,7 @@ import { moTaBoiCanh } from '../data/backgrounds';
 import { recordTryOnUsage } from './tryOnGuard';
 import { store } from './store';
 import { dungBoiCanhAnh, BoiCanhAnh } from './promptDong';
+import { mauHaY, mauThuPhuc } from './mauLook';
 
 // =============================================================================
 // 1. CẤU HÌNH API KEY VÀ KHỞI TẠO SDK @google/genai
@@ -370,7 +371,7 @@ function phatHienDoiDungMotMon(
     differences.push({
       layerKey: 'haY',
       layerName: 'lower garment (hạ y)',
-      itemDescription: `${hienTai.haY?.ten || 'quần lụa ống rộng'}, color ${hienTai.haY?.mauTruyenThong?.[0] || '#F2EDE3'}`,
+      itemDescription: `${hienTai.haY?.ten || 'quần lụa ống rộng'}, color ${mauHaY(hienTai) || '#F2EDE3'}`,
     });
   }
 
@@ -378,7 +379,7 @@ function phatHienDoiDungMotMon(
     differences.push({
       layerKey: 'thuPhuc',
       layerName: 'headwear (thủ phục)',
-      itemDescription: `${hienTai.thuPhuc?.ten || 'khăn vấn/khăn đóng'}, color ${hienTai.thuPhuc?.mauTruyenThong?.[0] || '#2C2A26'}`,
+      itemDescription: `${hienTai.thuPhuc?.ten || 'khăn vấn/khăn đóng'}, color ${mauThuPhuc(hienTai) || '#2C2A26'}`,
     });
   }
 
@@ -387,6 +388,23 @@ function phatHienDoiDungMotMon(
       layerKey: 'hai',
       layerName: 'footwear (hài)',
       itemDescription: `${hienTai.hai?.ten || 'hài thêu cổ truyền'}`,
+    });
+  }
+
+  // Đổi màu quần hoặc màu khăn mà giữ nguyên món: cũng là đổi đúng một lớp
+  if (hienTai.haY && hienTai.haY.id === truocDo.haY?.id && mauHaY(hienTai) !== mauHaY(truocDo)) {
+    differences.push({
+      layerKey: 'haY',
+      layerName: 'fabric color of the lower garment',
+      itemDescription: `color ${mauHaY(hienTai)}`,
+    });
+  }
+
+  if (hienTai.thuPhuc && hienTai.thuPhuc.id === truocDo.thuPhuc?.id && mauThuPhuc(hienTai) !== mauThuPhuc(truocDo)) {
+    differences.push({
+      layerKey: 'thuPhuc',
+      layerName: 'fabric color of the headwear',
+      itemDescription: `color ${mauThuPhuc(hienTai)}`,
     });
   }
 
@@ -542,9 +560,11 @@ async function xayDungPromptVaAnh(opts: {
   const thuongYTen = look.thuongY?.ten || 'Áo ngũ thân tay chẽn';
   const thuongYChatLieu =
     look.thuongY?.chatLieuPhoBien?.join(', ') || 'lụa tơ tằm, the dệt truyền thống';
-  const haYMau = look.haY?.mauTruyenThong?.[0] || '#F2EDE3 (trắng ngà)';
+  // Màu quần, màu khăn là màu người dùng chọn trong màu truyền thống của món (lib/mauLook.ts)
+  const tenMau = (hex?: string) => (hex ? `${TRADITIONAL_COLORS.find((c) => c.hex.toLowerCase() === hex.toLowerCase())?.ten || ''} hex ${hex}`.trim() : '');
+  const haYMau = tenMau(mauHaY(look)) || 'Ngà hex #F2EDE3';
   const haYChatLieu = look.haY?.chatLieuPhoBien?.join(', ') || 'lụa mềm';
-  const thuPhucMau = look.thuPhuc?.mauTruyenThong?.[0] || '#2C2A26 (đen)';
+  const thuPhucMau = tenMau(mauThuPhuc(look)) || 'The đen hex #2C2A26';
 
   // Thứ tự ảnh, tối đa 4: người dùng, cận mặt, thượng y, thủ phục. Còn chỗ mới thêm hạ y.
   const imageParts: AnhPart[] = [];
@@ -833,6 +853,8 @@ export async function macThu(opts: {
     opts.look.hai?.id || 'none',
     opts.look.hoaVan?.id || 'none',
     opts.look.mauChinh || 'none',
+    mauHaY(opts.look) || 'none',
+    mauThuPhuc(opts.look) || 'none',
   ].join('_');
 
   // Băm cả ảnh. Phần đầu dataURL của mọi ảnh JPEG gần như giống nhau, băm mỗi phần đầu sẽ lẫn ảnh người này sang người khác.
