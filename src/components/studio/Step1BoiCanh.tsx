@@ -387,7 +387,7 @@ export default function Step1BoiCanh() {
                 </div>
 
                 <p className="text-[11px] font-sans text-[#6E5439] italic pt-2 mt-2 border-t border-[#2C2A26]/10">
-                  Mặc định là Nguyên bản. Luật mức đỏ không bao giờ được nới, ở phong cách nào cũng vậy.
+                  Mặc định là Nguyên bản. Các luật văn hoá mức đỏ không bao giờ được nới; chỉ hai luật kiểm bộ (phối khác bộ, khác giới) đổi mức theo phong cách.
                 </p>
               </div>
             </div>
