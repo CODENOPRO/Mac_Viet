@@ -1,7 +1,7 @@
 import React from 'react';
 import { useStore } from '../../lib/store';
 import { TRADITIONAL_COLORS } from '../../data/palettes';
-import { BACKGROUNDS, chonBoiCanhTuDong } from '../../data/backgrounds';
+import { chonBoiCanhTuDong } from '../../data/backgrounds';
 import { Background } from '../../types';
 
 interface BanDaChonPanelProps {
@@ -10,7 +10,7 @@ interface BanDaChonPanelProps {
 }
 
 export default function BanDaChonPanel({ className = '', onOpenWhyModal }: BanDaChonPanelProps) {
-  const { lookState, selectedEvent, selectedRegion, tryOnBackgroundId } = useStore();
+  const { lookState, selectedEvent, selectedRegion } = useStore();
 
   // Xác định màu chính
   const mainColorHex = lookState.mauChinh || '#16243A';
@@ -21,7 +21,6 @@ export default function BanDaChonPanel({ className = '', onOpenWhyModal }: BanDa
 
   // Xác định bối cảnh nền
   const currentBg: Background =
-    BACKGROUNDS.find((b) => b.id === tryOnBackgroundId) ||
     chonBoiCanhTuDong(selectedEvent?.id);
 
   // Phụ kiện

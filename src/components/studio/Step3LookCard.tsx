@@ -22,6 +22,7 @@ import AiExplanationModal from './AiExplanationModal';
 import { Source } from '../../types';
 import { exportLookCardPoster } from '../../lib/tryOnGuard';
 import SourceTag from '../shared/SourceTag';
+import { taoLienKetChiaSe } from '../../lib/lienKetChiaSe';
 
 export default function Step3LookCard() {
   const {
@@ -289,32 +290,20 @@ export default function Step3LookCard() {
   // 6. XỬ LÝ CHIA SẺ VÀ CÁC HÀNH ĐỘNG
   // ---------------------------------------------------------------------------
   const handleShare = () => {
-    try {
-      const payload = {
-        ty: lookState.thuongY?.id,
-        hy: lookState.haY?.id,
-        tp: lookState.thuPhuc?.id,
-        hi: lookState.hai?.id,
-        mc: lookState.mauChinh,
-        ev: selectedEvent.id,
-        rg: contextSetup.regionId,
-        pc: contextSetup.phongCach,
-      };
-      const jsonStr = JSON.stringify(payload);
-      const hash = btoa(encodeURIComponent(jsonStr));
-      const shareUrl = `${window.location.origin}${window.location.pathname}#look=${encodeURIComponent(hash)}`;
-
-      navigator.clipboard
-        .writeText(shareUrl)
-        .then(() => {
-          showToast('Đã sao chép liên kết phối đồ vào bộ nhớ tạm.');
-        })
-        .catch(() => {
-          showToast('Đã sao chép liên kết phối đồ.');
-        });
-    } catch {
-      showToast('Đã tạo liên kết chia sẻ.');
+    // Link chứa đủ món, màu và bối cảnh; người nhận mở ra thấy đúng bộ đồ (xem lib/lienKetChiaSe.ts)
+    const shareUrl = taoLienKetChiaSe(lookState, contextSetup);
+    const chepTay = () => {
+      // Trình duyệt chặn chép tự động: đưa link ra để người dùng tự chép, không báo thành công giả
+      window.prompt('Trình duyệt chặn sao chép tự động. Bạn chép liên kết này:', shareUrl);
+    };
+    if (!navigator.clipboard?.writeText) {
+      chepTay();
+      return;
     }
+    navigator.clipboard
+      .writeText(shareUrl)
+      .then(() => showToast('Đã sao chép liên kết phối đồ vào bộ nhớ tạm.'))
+      .catch(chepTay);
   };
 
   const handleSaveLookbook = () => {

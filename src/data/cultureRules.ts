@@ -2,6 +2,13 @@ import { CultureRule, LookState, EventContext } from '../types';
 import { GARMENTS } from './garments';
 import { MOTIFS } from './motifs';
 
+/**
+ * Luật đã viết sẵn nhưng chưa chạy được: chúng xét các món trang phục dân tộc thiểu số, mà kho hiện vật
+ * chưa có món nào như vậy. Màn Luật văn hoá ghi rõ trạng thái này và không cho bấm xem ví dụ,
+ * thay vì dựng một bộ áo người Kinh rồi gắn cờ dân tộc thiểu số cho nó.
+ */
+export const LUAT_CHO_DU_LIEU = ['CR-17', 'CR-18', 'CR-19'];
+
 export const CULTURE_RULES: CultureRule[] = [
   {
     id: 'CR-01',

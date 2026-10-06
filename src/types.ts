@@ -147,7 +147,10 @@ export interface LookState {
   hai?: Garment | null;
   phuKien?: Garment[];
   hoaVan?: Motif | null;
-  mauChinh?: string;
+  mauChinh?: string; // màu thượng y
+  /** Màu hạ y, thủ phục: chỉ chọn trong màu truyền thống của món; trống thì là màu đầu tiên của món */
+  mauHaY?: string;
+  mauThuPhuc?: string;
   phuKienHienDai?: boolean; // ví dụ sneaker, túi xách hiện đại
   nhietDo?: number; // dùng cho CR-15 (ví dụ > 32 độ)
   isEthnicMinoritySingle?: boolean; // CR-17
@@ -227,6 +230,8 @@ export interface LookCardData {
   eventContextId?: string;
   /** Vai trong dịp lúc lưu, để mở lại thì luật văn hoá chấm đúng như lúc lưu */
   vaiTro?: VaiTro;
+  /** Toàn bộ bối cảnh lúc lưu: vùng, phong cách, giới, thời tiết */
+  boiCanh?: UserContextSetup;
   ghiChu?: string;
   /** Có ảnh mặc thử lưu kèm trong IndexedDB (xem lib/anhLookbook.ts) */
   coAnh?: boolean;

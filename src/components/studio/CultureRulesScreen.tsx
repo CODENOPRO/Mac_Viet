@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { CULTURE_RULES } from '../../data/cultureRules';
+import { LUAT_CHO_DU_LIEU, CULTURE_RULES } from '../../data/cultureRules';
 import { SOURCES } from '../../data/sources';
 import { store } from '../../lib/store';
 import { CultureRule, Source } from '../../types';
@@ -318,6 +318,14 @@ export default function CultureRulesScreen() {
 
                     {/* CỘT PHẢI: NÚT XEM VÍ DỤ NHẢY SANG XƯỞNG PHỐI */}
                     <div className="shrink-0 pt-1 md:self-start">
+                      {LUAT_CHO_DU_LIEU.includes(rule.id) ? (
+                        <span
+                          className="block max-w-[14rem] px-3 py-2 border border-dashed border-[#2C2A26]/30 font-sans text-[11px] text-[#6E5439] leading-snug"
+                          title="Luật đã viết sẵn, chờ dữ liệu"
+                        >
+                          Chờ dữ liệu: kho chưa có hiện vật dân tộc thiểu số nên luật này chưa chạy được.
+                        </span>
+                      ) : (
                       <button
                         type="button"
                         onClick={() => store.applyRuleExample(rule.id)}
@@ -327,6 +335,7 @@ export default function CultureRulesScreen() {
                         <span>XEM VÍ DỤ</span>
                         <span className="font-mono text-xs">→</span>
                       </button>
+                      )}
                     </div>
                   </div>
                 </div>

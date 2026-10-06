@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useStore, store } from '../../lib/store';
 import CompareLooksModal, { LookToCompare } from './CompareLooksModal';
 import { EVENTS } from '../../data/events';
-import { boiCanhHieuLuc } from '../../data/boiCanhSuKien';
+import { boiCanhHieuLuc, layVaiTro } from '../../data/boiCanhSuKien';
 import { SAMPLE_LOOKS } from '../../data/sampleLooks';
 import { layTenMau } from '../../data/palettes';
 import { LookCardData } from '../../types';
@@ -83,8 +83,18 @@ export default function LookbookScreen() {
 
   const allAvailableLooks = [...lookbook, ...SAMPLE_LOOKS];
 
-  const selectedLooksToCompare: LookToCompare[] = allAvailableLooks
-    .filter((item) => selectedIds.includes(item.id))
+  // Chỉ so các bộ cùng dịp và cùng vai: mức trang trọng và luật áp dụng phụ thuộc vào cả hai,
+  // so chéo dịp thì điểm số không còn nghĩa. Bộ đầu tiên được chọn quyết định bối cảnh chấm.
+  const cacLookDuocChon = allAvailableLooks.filter((item) => selectedIds.includes(item.id));
+  const khoaBoiCanh = (item: LookCardData) =>
+    `${item.eventContextId || 'E01'}|${layVaiTro(item.eventContextId || 'E01', item.vaiTro).id}`;
+  const cungBoiCanh = new Set(cacLookDuocChon.map(khoaBoiCanh)).size <= 1;
+  const lookMoc = cacLookDuocChon[0];
+  const boiCanhSoSanh = lookMoc
+    ? boiCanhHieuLuc(lookMoc.eventContextId || 'E01', lookMoc.vaiTro)
+    : selectedEvent;
+
+  const selectedLooksToCompare: LookToCompare[] = cacLookDuocChon
     .map((item) => ({
       id: item.id,
       ten: item.ten,
@@ -107,7 +117,12 @@ export default function LookbookScreen() {
         </div>
 
         <div className="flex items-center gap-3">
-          {selectedIds.length >= 2 && (
+          {selectedIds.length >= 2 && !cungBoiCanh && (
+            <span className="max-w-[16rem] px-3 py-2 border border-dashed border-[#A8322A]/50 font-sans text-[11px] text-[#A8322A] leading-snug">
+              Chỉ so được các bộ cùng dịp và cùng vai. Bỏ chọn bớt cho cùng bối cảnh.
+            </span>
+          )}
+          {selectedIds.length >= 2 && cungBoiCanh && (
             <button
               type="button"
               onClick={() => setCompareModalOpen(true)}
@@ -420,11 +435,8 @@ export default function LookbookScreen() {
         isOpen={compareModalOpen}
         onClose={() => setCompareModalOpen(false)}
         initialLooks={selectedLooksToCompare}
-        eventContext={
-          lookbook[0]?.eventContextId
-            ? boiCanhHieuLuc(lookbook[0].eventContextId, lookbook[0].vaiTro)
-            : selectedEvent
-        }
+        eventContext={boiCanhSoSanh}
+        boiCanhSoSanh={lookMoc?.boiCanh}
       />
     </div>
   );

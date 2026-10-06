@@ -18,8 +18,11 @@ import { MOTIFS } from '../data/motifs';
 import { luuAnhLook, docAnhLook, xoaAnhLook } from './anhLookbook';
 import { GARMENTS } from '../data/garments';
 import { REGIONS } from '../data/regions';
-import { CULTURE_RULES } from '../data/cultureRules';
+import { CULTURE_RULES, LUAT_CHO_DU_LIEU } from '../data/cultureRules';
 import { HISTORICAL_PALETTES } from '../data/palettes';
+import { BO_TRANG_PHUC } from '../data/boTrangPhuc';
+import { kiemTraVanHoa } from './cultureGuard';
+import { maHoaLook, giaiMaLook, TIEN_TO_LINK } from './lienKetChiaSe';
 
 export interface AppStoreState {
   currentScreen: ScreenType;
@@ -34,7 +37,6 @@ export interface AppStoreState {
   userPhoto: string | null;
   activeTryOnImage: string | null;
   tryOnHistory: string[];
-  tryOnBackgroundId: string;
   tryOnQuality: 'nhanh' | 'ky';
   isTryOnStale: boolean;
   lastTriedLook: LookState | null;
@@ -55,7 +57,7 @@ if (typeof window !== 'undefined') {
 const getScreenFromHash = (): ScreenType => {
   if (typeof window === 'undefined') return 'landing';
   const hash = window.location.hash.replace('#', '');
-  if (hash.startsWith('xuong-phoi') || hash.startsWith('studio')) return 'studio';
+  if (hash.startsWith('xuong-phoi') || hash.startsWith('studio') || hash.startsWith('look=')) return 'studio';
   if (hash.startsWith('lookbook')) return 'lookbook';
   if (hash.startsWith('cu-nghe') || hash.startsWith('cu_nghe')) return 'cu_nghe';
   if (hash.startsWith('luat-van-hoa') || hash.startsWith('culture-rules') || hash.startsWith('culture_rules')) return 'culture_rules';
@@ -151,7 +153,6 @@ let state: AppStoreState = {
     : null,
   activeTryOnImage: null,
   tryOnHistory: [],
-  tryOnBackgroundId: 'BG2',
   tryOnQuality: 'nhanh',
   isTryOnStale: false,
   lastTriedLook: null,
@@ -177,22 +178,37 @@ function pushHistory(newLook: LookState) {
   }
 }
 
+// Thanh địa chỉ luôn mang link chia sẻ của bộ đang phối, cùng dạng với nút Chia sẻ (#look=...),
+// nên chép thẳng địa chỉ trang cũng mở ra đúng bộ đồ và đúng bối cảnh.
 function syncHashWithLookState(look: LookState) {
   if (typeof window === 'undefined' || state.currentScreen !== 'studio') return;
   try {
-    const compact = [
-      look.thuongY?.id || 'none',
-      look.haY?.id || 'none',
-      look.thuPhuc?.id || 'none',
-      look.hai?.id || 'none',
-      look.hoaVan?.id || 'none',
-      (look.mauChinh || '#16243A').replace('#', ''),
-    ].join('.');
-    const hash = `#xuong-phoi/${compact}`;
-    window.history.replaceState(null, '', hash);
+    window.history.replaceState(null, '', `#${TIEN_TO_LINK}${encodeURIComponent(maHoaLook(look, state.contextSetup))}`);
   } catch {
     // ignore
   }
+}
+
+/** Mở bộ đồ từ link chia sẻ: đặt món, màu và bối cảnh, vào thẳng bước phối đồ. */
+function apDungLienKet(hash: string): boolean {
+  const ketQua = giaiMaLook(hash);
+  if (!ketQua) return false;
+  const ctxHopLe = Object.fromEntries(
+    Object.entries(ketQua.ctx).filter(([, v]) => v !== undefined && v !== null && v !== '')
+  ) as Partial<UserContextSetup>;
+  state = {
+    ...state,
+    ...voiBoiCanh(ctxHopLe),
+    lookState: ketQua.look,
+    currentScreen: 'studio',
+    studioStep: 3,
+    activeTryOnImage: null,
+    lastTriedLook: null,
+    isTryOnStale: false,
+  };
+  historyStack = [ketQua.look];
+  historyIndex = 0;
+  return true;
 }
 
 const listeners = new Set<() => void>();
@@ -235,6 +251,7 @@ export const store = {
         window.history.pushState(null, '', hash || window.location.pathname);
       }
     }
+    syncHashWithLookState(state.lookState);
     emitChange();
   },
 
@@ -256,11 +273,6 @@ export const store = {
   addToTryOnHistory(img: string) {
     const nextHistory = [img, ...state.tryOnHistory.filter((i) => i !== img)].slice(0, 6);
     state = { ...state, tryOnHistory: nextHistory };
-    emitChange();
-  },
-
-  setTryOnBackgroundId(bgId: string) {
-    state = { ...state, tryOnBackgroundId: bgId };
     emitChange();
   },
 
@@ -299,9 +311,12 @@ export const store = {
       ...state,
       // Dịp là gốc: vai trò, mức trang trọng, phong cách luôn được đưa về tổ hợp hợp với dịp
       ...voiBoiCanh(partial),
+      // Nhiệt độ của look (luật CR-15 đọc) luôn theo nhiệt độ đang nhập ở bước bối cảnh
+      lookState: partial.nhietDo !== undefined ? { ...state.lookState, nhietDo: partial.nhietDo } : state.lookState,
       // Bối cảnh đổi thì prompt ảnh đổi, nên ảnh đang có không còn khớp
       isTryOnStale: state.activeTryOnImage ? true : state.isTryOnStale,
     };
+    syncHashWithLookState(state.lookState);
     emitChange();
   },
 
@@ -363,7 +378,7 @@ export const store = {
 
   applyRuleExample(ruleId: string) {
     const rule = CULTURE_RULES.find((r) => r.id === ruleId);
-    if (!rule || !rule.viDu) return;
+    if (!rule || !rule.viDu || LUAT_CHO_DU_LIEU.includes(rule.id)) return;
 
     let newEvent = state.selectedEvent;
     let newRegion = state.selectedRegion;
@@ -437,35 +452,60 @@ export const store = {
   },
 
   // Ngẫu nhiên hợp lệ: Bốc ngẫu nhiên nhưng chỉ trong số các món không vi phạm luật mức đỏ
-  pickRandomValidLook() {
-    const safeTops = GARMENTS.filter((g) => g.lop === 'thuong_y' && g.id !== 'G06'); // Tránh Nhật bình E07
-    const randomTop = safeTops[Math.floor(Math.random() * safeTops.length)] || null;
-    const safeBottoms = GARMENTS.filter((g) => g.lop === 'ha_y');
-    const randomBottom = safeBottoms[Math.floor(Math.random() * safeBottoms.length)] || null;
-    const safeHeadwear = GARMENTS.filter((g) => g.lop === 'thu_phuc');
-    const randomHead = safeHeadwear[Math.floor(Math.random() * safeHeadwear.length)] || null;
-    const safeShoes = GARMENTS.filter((g) => g.lop === 'hai');
-    const randomShoe = safeShoes[Math.floor(Math.random() * safeShoes.length)] || null;
-    
-    // Màu an toàn: Chàm, Nâu non, Ngà, The đen
-    const safeColors = ['#16243A', '#6E5439', '#F2EDE3', '#2C2A26'];
-    const randomColor = safeColors[Math.floor(Math.random() * safeColors.length)];
+  /**
+   * Phối ngẫu nhiên nhưng đúng văn hoá: chỉ bốc trong các bộ trang phục có sẵn trong dữ liệu,
+   * lọc theo giới đã khai, chọn màu trong màu truyền thống của từng món, rồi chạy Culture Guard
+   * với đúng bối cảnh đang chọn. Chỉ nhận bộ không có cờ đỏ, ưu tiên bộ xanh.
+   * Trả false nếu không tìm được bộ nào hợp, khi đó giữ nguyên bộ đang phối.
+   */
+  pickRandomValidLook(): boolean {
+    const ctx = state.contextSetup;
+    const dip = state.selectedEvent;
+    const hopGioi = (gioi: string) => ctx.nguoiMac === 'khong_neu' || gioi === 'ca_hai' || gioi === ctx.nguoiMac;
+    const bocMot = <T,>(ds: T[]): T | undefined => ds[Math.floor(Math.random() * ds.length)];
+    const timMon = (id?: string) => (id ? GARMENTS.find((g) => g.id === id) || null : null);
 
-    const nextLook: LookState = {
-      thuongY: randomTop,
-      haY: randomBottom,
-      thuPhuc: randomHead,
-      hai: randomShoe,
-      phuKien: [],
-      hoaVan: null, // Không gắn M08 Rồng 5 móng
-      mauChinh: randomColor,
-      phuKienHienDai: false,
-      nhietDo: state.contextSetup.nhietDo,
-    };
+    const cacBo = BO_TRANG_PHUC.filter((bo) => hopGioi(bo.gioiTinh));
+    let boVang: LookState | null = null;
+    for (let lan = 0; lan < 60; lan++) {
+      const bo = bocMot(cacBo);
+      if (!bo) break;
+      const ao = timMon(bocMot(bo.cacMonTheoLop.thuongY.filter((id) => hopGioi(timMon(id)?.gioiTinh || 'ca_hai'))));
+      if (!ao) continue;
+      // Áo lệch quá xa mức trang trọng dịp yêu cầu thì bỏ, khỏi phải chờ luật báo
+      if (Math.abs(ao.mucTrangTrong - dip.mucTrangTrongYeuCau) > 1) continue;
+      const quan = timMon(bocMot(bo.cacMonTheoLop.haY));
+      const khan = timMon(bocMot(bo.cacMonTheoLop.thuPhuc.filter((id) => hopGioi(timMon(id)?.gioiTinh || 'ca_hai'))));
+      const hai = timMon(bocMot(bo.cacMonTheoLop.hai));
+      const look: LookState = {
+        thuongY: ao,
+        haY: quan,
+        thuPhuc: khan,
+        hai,
+        phuKien: (bo.cacMonTheoLop.phuKienBatBuoc || []).map((id) => timMon(id)).filter((g): g is Garment => Boolean(g)),
+        hoaVan: null,
+        mauChinh: bocMot(ao.mauTruyenThong) || '#16243A',
+        mauHaY: quan ? bocMot(quan.mauTruyenThong) : undefined,
+        mauThuPhuc: khan ? bocMot(khan.mauTruyenThong) : undefined,
+        phuKienHienDai: false,
+        nhietDo: ctx.nhietDo,
+        isEthnicMinoritySingle: false,
+        hasEthnicEmbroideryOnVietTop: false,
+        isGopChungTayBac: false,
+      };
+      const ketQua = kiemTraVanHoa(look, dip, ctx.phongCach, ctx.regionId, ctx.nguoiMac).mucDoChung;
+      if (ketQua === 'xanh') {
+        boVang = look;
+        break;
+      }
+      if (ketQua === 'vang' && !boVang) boVang = look;
+    }
+    if (!boVang) return false;
 
-    state = { ...state, lookState: nextLook };
-    pushHistory(nextLook);
+    state = { ...state, lookState: boVang };
+    pushHistory(boVang);
     emitChange();
+    return true;
   },
 
   setNhietDo(temp: number) {
@@ -504,6 +544,7 @@ export const store = {
       ngayTao: new Date().toISOString().split('T')[0],
       eventContextId: state.selectedEvent.id,
       vaiTro: state.contextSetup.vaiTro,
+      boiCanh: { ...state.contextSetup },
       look: { ...state.lookState },
       ghiChu: ghiChu || state.selectedEvent.ten,
       coAnh: Boolean(anh),
@@ -544,6 +585,7 @@ export const store = {
     const timAo = (g?: Garment | null) => (g ? GARMENTS.find((x) => x.id === g.id) || g : null);
     const look: LookState = {
       ...item.look,
+      nhietDo: item.boiCanh?.nhietDo ?? state.contextSetup.nhietDo,
       thuongY: timAo(item.look.thuongY),
       haY: timAo(item.look.haY),
       thuPhuc: timAo(item.look.thuPhuc),
@@ -556,7 +598,13 @@ export const store = {
       ...state,
       lookState: look,
       // Mở lại đúng dịp và vai lúc lưu; bản lưu cũ chưa có vai thì về vai mặc định của dịp
-      ...voiBoiCanh({ eventId: dip.id, vaiTro: item.vaiTro ?? (dip.id === state.contextSetup.eventId ? state.contextSetup.vaiTro : undefined) }),
+      // Mở lại đúng bối cảnh lúc lưu (dịp, vai, vùng, phong cách, giới, thời tiết). Bản lưu cũ chỉ có dịp
+      // thì giữ phần còn lại như đang chọn, vai về mặc định của dịp.
+      ...voiBoiCanh(
+        item.boiCanh
+          ? { ...item.boiCanh }
+          : { eventId: dip.id, vaiTro: item.vaiTro ?? (dip.id === state.contextSetup.eventId ? state.contextSetup.vaiTro : undefined) }
+      ),
       activeTryOnImage: null,
       lastTriedLook: null,
       isTryOnStale: false,
@@ -691,7 +739,18 @@ export function useStore(): AppStoreState {
 
 // Lắng nghe nút back / forward của trình duyệt qua popstate & hashchange
 if (typeof window !== 'undefined') {
+  // Mở trang bằng link chia sẻ: dựng lại bộ đồ và bối cảnh trước khi app vẽ lần đầu
+  if (window.location.hash.startsWith('#' + TIEN_TO_LINK)) apDungLienKet(window.location.hash);
+
   const syncScreenFromHash = () => {
+    // Dán link chia sẻ khác vào cùng tab: mở bộ đồ đó
+    const hienTai = '#' + TIEN_TO_LINK + encodeURIComponent(maHoaLook(state.lookState, state.contextSetup));
+    if (window.location.hash.startsWith('#' + TIEN_TO_LINK) && window.location.hash !== hienTai) {
+      if (apDungLienKet(window.location.hash)) {
+        emitChange();
+        return;
+      }
+    }
     const screen = getScreenFromHash();
     if (state.currentScreen !== screen) {
       state = { ...state, currentScreen: screen };

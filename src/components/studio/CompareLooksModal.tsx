@@ -6,7 +6,7 @@ import { FALLBACK_OUTFITS_BY_EVENT } from '../../data/fallbackLooks';
 import { tinhHaiHoa, ColorInputItem } from '../../lib/colorHarmony';
 import { kiemTraVanHoa } from '../../lib/cultureGuard';
 import { soSanhLook, LookComparisonInput, SoSanhLookResponse } from '../../lib/gemini';
-import { LookState, EventContext, CultureFlag } from '../../types';
+import { LookState, EventContext, CultureFlag, UserContextSetup } from '../../types';
 
 export interface LookToCompare {
   id: string;
@@ -21,6 +21,8 @@ interface CompareLooksModalProps {
   onClose: () => void;
   initialLooks?: LookToCompare[];
   eventContext?: EventContext;
+  /** Bối cảnh lúc lưu của các bộ đem so; không có thì dùng bối cảnh đang chọn */
+  boiCanhSoSanh?: UserContextSetup;
 }
 
 export default function CompareLooksModal({
@@ -28,8 +30,10 @@ export default function CompareLooksModal({
   onClose,
   initialLooks,
   eventContext,
+  boiCanhSoSanh,
 }: CompareLooksModalProps) {
-  const { lookState: currentLookState, selectedEvent: storeEvent, contextSetup, lookbook } = useStore();
+  const { lookState: currentLookState, selectedEvent: storeEvent, contextSetup: ctxDangChon, lookbook } = useStore();
+  const contextSetup = boiCanhSoSanh || ctxDangChon;
   const event = eventContext || storeEvent;
 
   // ---------------------------------------------------------------------------

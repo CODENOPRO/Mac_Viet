@@ -3,7 +3,7 @@ import { useStore, store } from '../../lib/store';
 import { GARMENTS } from '../../data/garments';
 import { TRADITIONAL_COLORS, HISTORICAL_PALETTES } from '../../data/palettes';
 import { MOTIFS } from '../../data/motifs';
-import { BACKGROUNDS, chonBoiCanhTuDong } from '../../data/backgrounds';
+import { chonBoiCanhTuDong } from '../../data/backgrounds';
 import { GarmentLayer, Garment, Motif, Background } from '../../types';
 import { tinhHaiHoa, ColorInputItem } from '../../lib/colorHarmony';
 import { kiemTraVanHoa } from '../../lib/cultureGuard';
@@ -30,7 +30,6 @@ export default function Step3PhoiDo() {
     userPhoto,
     activeTryOnImage,
     tryOnHistory,
-    tryOnBackgroundId,
     tryOnQuality,
     isTryOnStale,
     lastTriedLook,
@@ -40,7 +39,6 @@ export default function Step3PhoiDo() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [secondsElapsed, setSecondsElapsed] = useState(0);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
-  const [showBgDropdown, setShowBgDropdown] = useState(false);
   const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
   const [showWhyModal, setShowWhyModal] = useState(false);
   const [showChiTietDiem, setShowChiTietDiem] = useState(false);
@@ -55,7 +53,6 @@ export default function Step3PhoiDo() {
 
   // 1. Xác định bối cảnh nền mặc định (nếu chưa chọn, tự khớp theo sự kiện & vùng)
   const currentBg: Background =
-    BACKGROUNDS.find((b) => b.id === tryOnBackgroundId) ||
     chonBoiCanhTuDong(selectedEvent.id);
 
   // 2. Trạng thái ảnh: kiểm tra người dùng đã có ảnh hay chưa
@@ -294,7 +291,12 @@ export default function Step3PhoiDo() {
 
           <button
             type="button"
-            onClick={() => store.pickRandomValidLook()}
+            onClick={() => {
+              // Chỉ bốc trong các bộ có sẵn và hợp bối cảnh; không tìm được thì giữ bộ đang phối và nói rõ
+              if (!store.pickRandomValidLook()) {
+                setStatusMessage('Chưa tìm được bộ ngẫu nhiên nào hợp bối cảnh này mà không bị cờ đỏ. Bộ đang phối được giữ nguyên.');
+              }
+            }}
             className="px-3 py-1 border border-[#C39A27] text-[#C39A27] hover:bg-[#C39A27] hover:text-[#0D1826] text-xs font-mono uppercase tracking-wider transition-colors ml-2"
           >
             PHỐI NGẪU NHIÊN
@@ -529,52 +531,15 @@ export default function Step3PhoiDo() {
                 )}
               </div>
 
-              {/* Ô CHỌN BỐI CẢNH NỀN (MẶC ĐỊNH THEO SỰ KIỆN, BẤM MỞ 8 NỀN) */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setShowBgDropdown(!showBgDropdown)}
-                  className="w-full flex items-center justify-between p-2.5 border border-[#2C2A26]/20 bg-[#F2EDE3] text-left hover:border-[#2C2A26]/50 transition-colors cursor-pointer"
-                >
-                  <div className="flex flex-col">
-                    <span className="font-mono text-[9px] uppercase tracking-wider text-[#6E5439]">
-                      BỐI CẢNH NỀN
-                    </span>
-                    <span className="font-display text-xs text-[#2C2A26] font-medium">
-                      {currentBg.ten}
-                    </span>
-                  </div>
-                  <span className="font-mono text-xs text-[#6E5439]">
-                    {showBgDropdown ? '▲' : '▼'}
-                  </span>
-                </button>
-
-                {showBgDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-[#FBF8F2] border border-[#2C2A26] shadow-xl z-30 max-h-56 overflow-y-auto p-1.5">
-                    {BACKGROUNDS.map((bg) => {
-                      const isSelected = bg.id === currentBg.id;
-                      return (
-                        <button
-                          key={bg.id}
-                          type="button"
-                          onClick={() => {
-                            store.setTryOnBackgroundId(bg.id);
-                            setShowBgDropdown(false);
-                          }}
-                          className={`w-full text-left p-2 flex flex-col transition-colors cursor-pointer ${
-                            isSelected
-                              ? 'bg-[#16243A] text-[#F2EDE3]'
-                              : 'hover:bg-[#F2EDE3] text-[#2C2A26]'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-display text-xs">{bg.ten}</span>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+              {/* CẢNH CHỤP: suy từ dịp và vùng ở bước 1, không chọn tay, để ảnh luôn khớp bối cảnh đang chấm */}
+              <div className="p-2.5 border border-[#2C2A26]/15 bg-[#F2EDE3]">
+                <span className="font-mono text-[9px] uppercase tracking-wider text-[#6E5439] block">CẢNH CHỤP</span>
+                <span className="font-display text-xs text-[#2C2A26] font-medium block">
+                  {currentBg.ten} · {selectedRegion.ten}
+                </span>
+                <span className="font-sans text-[10px] text-[#6E5439] block mt-0.5">
+                  Theo dịp và vùng bạn chọn ở bước 1. Muốn đổi cảnh thì đổi dịp hoặc vùng.
+                </span>
               </div>
                 </div>
               </details>
