@@ -164,7 +164,7 @@ export default function TryOnModal({
 
       // 2. Gửi ảnh đã xử lý tới Gemini qua macThu với chế độ kỹ 2 lượt
       const boiCanh = selectedEvent || EVENTS[0];
-      const bg = chonBoiCanhTuDong(boiCanh.id, selectedRegion?.id);
+      const bg = chonBoiCanhTuDong(boiCanh.id);
       const res = await macThu({
         anhNguoi: croppedBase64,
         look: lookState,

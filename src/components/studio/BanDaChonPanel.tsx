@@ -22,7 +22,7 @@ export default function BanDaChonPanel({ className = '', onOpenWhyModal }: BanDa
   // Xác định bối cảnh nền
   const currentBg: Background =
     BACKGROUNDS.find((b) => b.id === tryOnBackgroundId) ||
-    chonBoiCanhTuDong(selectedEvent?.id, selectedRegion?.id, mainColorHex);
+    chonBoiCanhTuDong(selectedEvent?.id);
 
   // Phụ kiện
   const phuKienText =

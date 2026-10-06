@@ -135,9 +135,11 @@ export function dungBoiCanhAnh(ctx: UserContextSetup, suKien: EventContext | und
   const dangDung = leNghiem ? DANG_TRANG_TRONG : pc.dang;
   tomTat.push(pc.vi);
 
-  let anhSang = 'one large soft key light from the front-left, gentle shadows, low contrast, no harsh flash';
+  // Ánh sáng tự nhiên của nơi chụp, không đèn studio
+  let anhSang =
+    'natural available light of the location, falling on the person from the same direction and with the same colour as on the scene, gentle shadows, no flash';
   if (ctx.phongCach === 'san_khau') {
-    anhSang = 'dramatic directional key light with deeper shadows and a subtle rim light';
+    anhSang = 'strong warm directional light from one side, as from a low sun, with deeper shadows';
   }
   if (ctx.thoiTietMua) {
     anhSang += '; cool, soft overcast feel with slightly subdued colours, as on a rainy day';

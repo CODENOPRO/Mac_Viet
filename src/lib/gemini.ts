@@ -652,7 +652,7 @@ export async function renderLook(
   moTaAvatar?: string
 ): Promise<{ imageUrl: string }> {
   const boiCanh = EVENTS[0];
-  const bg = chonBoiCanhTuDong(boiCanh.id, 'toan_quoc');
+  const bg = chonBoiCanhTuDong(boiCanh.id);
 
   const res = await macThu({
     anhNguoi: anhNguoiDung || '',

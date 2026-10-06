@@ -44,7 +44,7 @@ export default function Step3LookCard() {
     try {
       const bg =
         BACKGROUNDS.find((b) => b.id === tryOnBackgroundId) ||
-        chonBoiCanhTuDong(selectedEvent?.id, contextSetup?.regionId, lookState.mauChinh);
+        chonBoiCanhTuDong(selectedEvent?.id);
       const anhNguoiInput = userPhoto || '';
       const res = await macThu({
         anhNguoi: anhNguoiInput,
@@ -278,7 +278,7 @@ export default function Step3LookCard() {
       setLoadingImage(false);
     } else {
       setLoadingImage(true);
-      const bg = chonBoiCanhTuDong(selectedEvent?.id, contextSetup?.regionId, lookState.mauChinh);
+      const bg = chonBoiCanhTuDong(selectedEvent?.id);
       const anhNguoiInput = userPhoto || '';
       macThu({
         anhNguoi: anhNguoiInput,

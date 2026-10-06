@@ -7,7 +7,7 @@ import { BACKGROUNDS, chonBoiCanhTuDong } from '../../data/backgrounds';
 import { GarmentLayer, Garment, Motif, Background } from '../../types';
 import { tinhHaiHoa, ColorInputItem } from '../../lib/colorHarmony';
 import { kiemTraVanHoa } from '../../lib/cultureGuard';
-import { macThu } from '../../lib/tryOn';
+import { macThu, KiemTraAnh } from '../../lib/tryOn';
 import { dungBoiCanhAnh } from '../../lib/promptDong';
 import CultureFlagPanel from './CultureFlagPanel';
 import AiExplanationModal from './AiExplanationModal';
@@ -48,13 +48,15 @@ export default function Step3PhoiDo() {
   const [dailyQuota, setDailyQuota] = useState(getDailyQuota);
   const [isNetworkError, setIsNetworkError] = useState(false);
   const [isRefusalError, setIsRefusalError] = useState(false);
+  const [kiemTra, setKiemTra] = useState<KiemTraAnh | null>(null);
+  const [moChiTietKiem, setMoChiTietKiem] = useState(false);
 
   const timerRef = useRef<any>(null);
 
   // 1. Xác định bối cảnh nền mặc định (nếu chưa chọn, tự khớp theo sự kiện & vùng)
   const currentBg: Background =
     BACKGROUNDS.find((b) => b.id === tryOnBackgroundId) ||
-    chonBoiCanhTuDong(selectedEvent.id, selectedRegion.id, lookState.mauChinh);
+    chonBoiCanhTuDong(selectedEvent.id);
 
   // 2. Trạng thái ảnh: kiểm tra người dùng đã có ảnh hay chưa
   const hasPhoto = Boolean(userPhoto || activeTryOnImage);
@@ -117,6 +119,8 @@ export default function Step3PhoiDo() {
     setIsProcessing(true);
     setIsNetworkError(false);
     setIsRefusalError(false);
+    setKiemTra(null);
+    setMoChiTietKiem(false);
     if (!statusMessage?.includes('2 lượt')) {
       setStatusMessage(null);
     }
@@ -146,6 +150,7 @@ export default function Step3PhoiDo() {
           store.addToTryOnHistory(res.anh);
           store.setLastTriedLook(lookState);
           store.setIsTryOnStale(false);
+          setKiemTra(res.kiemTra || null);
         }
         if (res.canhBao && res.canhBao.length > 0) {
           const mainWarning = res.canhBao[0];
@@ -395,6 +400,35 @@ export default function Step3PhoiDo() {
               >
                 Ảnh minh hoạ do AI dựng. Chi tiết cổ áo, khuy, hoa văn có thể chưa đúng.
               </button>
+            )}
+
+            {/* KẾT QUẢ TỰ KIỂM ẢNH: KHỚP BAO NHIÊU LỰA CHỌN, CÓ GIỮ ĐÚNG MẶT KHÔNG */}
+            {activeTryOnImage && kiemTra && (
+              <div className="flex flex-col gap-1">
+                <button
+                  type="button"
+                  onClick={() => setMoChiTietKiem((v) => !v)}
+                  className="self-start font-mono text-[11px] uppercase tracking-wider text-[#2C2A26] hover:text-[#A8322A] cursor-pointer"
+                >
+                  ẢNH KHỚP {kiemTra.soKhop}/{kiemTra.tongSo} LỰA CHỌN {moChiTietKiem ? '▲' : '▼'}
+                </button>
+                {moChiTietKiem && (
+                  <ul className="flex flex-col gap-0.5">
+                    {kiemTra.chiTiet.map((c) => (
+                      <li key={c.ten} className="font-sans text-xs text-[#2C2A26] leading-snug">
+                        <span className={c.khop ? 'text-[#2F4A40]' : 'text-[#A8322A]'}>{c.khop ? '✓' : '✗'}</span>{' '}
+                        {c.ten}
+                        {!c.khop && c.nhinThay ? `: ảnh vẽ ra ${c.nhinThay}` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {kiemTra.matLech && (
+                  <p className="font-mono text-[11px] text-[#A8322A] leading-snug">
+                    Khuôn mặt có thể đã lệch so với ảnh của bạn. Hãy thử ảnh chính diện, đủ sáng.
+                  </p>
+                )}
+              </div>
             )}
 
             {/* CÁC THAO TÁC MẶC THỬ VÀ CHẾ ĐỘ */}
